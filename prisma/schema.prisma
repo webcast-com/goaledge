@@ -1,0 +1,117 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  password  String?
+  image     String?
+  plan      String    @default("free") // "free" | "premium"
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  betSlips BetSlip[]
+  bookmarks Bookmark[]
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  tipId     String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  tip  Tip  @relation(fields: [tipId], references: [id])
+
+  @@unique([userId, tipId])
+}
+
+model Tip {
+  id              String   @id @default(cuid())
+  league          String
+  country         String
+  flag            String   @default("⚽")
+  homeTeam        String
+  awayTeam        String
+  matchTime       String
+  predictionType  String
+  prediction      String
+  odds            String
+  confidence      Int
+  confidenceLabel String
+  status          String   @default("upcoming") // "upcoming" | "won" | "lost" | "void" | "pending"
+  tipster         String
+  isPremium       Boolean  @default(false)
+  analysis        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  betSlips BetSlip[]
+  bookmarks Bookmark[]
+}
+
+model BetSlip {
+  id        String   @id @default(cuid())
+  userId    String
+  tipId     String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  tip  Tip  @relation(fields: [tipId], references: [id])
+}
+
+model Newsletter {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  subscribedAt DateTime @default(now())
+  active       Boolean  @default(true)
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  userId        String?
+  email         String
+  amount        Int      // in Ksh (kobo equivalent not needed for Ksh)
+  plan          String   // "daily" | "weekly" | "monthly"
+  reference     String   @unique // Paystack reference
+  accessCode    String?  // Paystack access_code
+  status        String   @default("pending") // "pending" | "processing" | "completed" | "failed" | "abandoned"
+  channel       String?  // "card" | "bank" | "ussd" | "mobile_money" etc.
+  paidAt        DateTime?
+  expiresAt     DateTime? // when premium access expires
+  metadata      String?  // JSON string for extra data
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model PlacedBet {
+  id            String   @id @default(cuid())
+  userId        String?
+  email         String
+  betType       String   // "single" | "double" | "treble" | "4fold" | "5fold" | "6fold" | "acca"
+  legs          String   // JSON: Array<{ tipId, homeTeam, awayTeam, league, prediction, predictionType, odds, matchTime }>
+  stake         Int      // in Ksh
+  totalOdds     Float    // combined odds
+  potentialReturn Int    // potential return in Ksh
+  status        String   @default("pending") // "pending" | "won" | "lost" | "void" | "partial" | "cashout"
+  result        String?  // JSON: Array<{ tipId, result: "won"|"lost"|"void"|"pending" }>
+  settledAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
