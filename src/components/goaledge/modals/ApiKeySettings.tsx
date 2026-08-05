@@ -51,18 +51,6 @@ export function ApiKeySettings({
   } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Check existing key status on open
-  useEffect(() => {
-    if (open) {
-      checkExistingKey();
-      setValidationState("idle");
-      setValidationMsg("");
-      setKeyInput("");
-      setShowKey(false);
-      setTimeout(() => inputRef.current?.focus(), 200);
-    }
-  }, [open]);
-
   const checkExistingKey = async () => {
     setChecking(true);
     try {
@@ -94,6 +82,20 @@ export function ApiKeySettings({
       setChecking(false);
     }
   };
+
+  // Check existing key status when the dialog opens
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => {
+        checkExistingKey();
+        setValidationState("idle");
+        setValidationMsg("");
+        setKeyInput("");
+        setShowKey(false);
+        inputRef.current?.focus();
+      }, 0);
+    }
+  }, [open]);
 
   const handleSave = async () => {
     const key = keyInput.trim();
