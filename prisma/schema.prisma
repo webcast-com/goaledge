@@ -115,3 +115,15 @@ model AppSetting {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+model SharedSlip {
+  slug            String    @id // short public id, e.g. "k3p9x2"
+  email           String?   // optional owner
+  legs            String    // JSON: Array<{ homeTeam, awayTeam, league, prediction, predictionType, odds, matchTime }>
+  stake           Int?
+  totalOdds       Float?
+  potentialReturn Int?
+  createdAt       DateTime  @default(now())
+
+  @@index([email])
+}

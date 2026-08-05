@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 /**
  * POST /api/auth/reset-password
@@ -11,6 +12,10 @@ import { db } from "@/lib/db";
  * generate a token here and send the reset link.
  */
 export async function POST(request: NextRequest) {
+  // Rate limit: max 5 reset requests per IP per minute
+  const rl = rateLimit(`reset-password:${getClientIp(request)}`, 5);
+  if (!rl.ok) return rateLimitResponse(rl.retryAfterSec);
+
   try {
     const body = await request.json();
     const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";

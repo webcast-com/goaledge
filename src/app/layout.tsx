@@ -1,9 +1,17 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import AuthProvider from "@/components/goaledge/auth-provider";
+import { ServiceWorkerRegister } from "@/components/goaledge/service-worker-register";
+
+export const viewport: Viewport = {
+  themeColor: "#10b981",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 // Self-hosted Geist fonts (no runtime dependency on Google Fonts)
 const geistSans = localFont({
@@ -35,7 +43,14 @@ export const metadata: Metadata = {
   authors: [{ name: "GoalEdge" }],
   icons: {
     icon: "/favicon.svg",
+    apple: "/icons/icon-192.png",
   },
+  appleWebApp: {
+    capable: true,
+    title: "GoalEdge",
+    statusBarStyle: "black-translucent",
+  },
+  manifest: "/manifest.webmanifest",
   openGraph: {
     title: "GoalEdge — Smarter Football Predictions",
     description: "Predict smarter. Win more often. Expert tips across 10+ leagues.",
@@ -70,6 +85,7 @@ export default function RootLayout({
           </AuthProvider>
         </ThemeProvider>
         <Toaster />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

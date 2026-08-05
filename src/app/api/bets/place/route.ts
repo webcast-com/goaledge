@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { settleBet } from "@/lib/bet-settlement";
+import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 interface BetLeg {
   tipId: string;
@@ -14,6 +15,10 @@ interface BetLeg {
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limit: max 30 bets per IP per minute
+  const rl = rateLimit(`bets:${getClientIp(request)}`, 30);
+  if (!rl.ok) return rateLimitResponse(rl.retryAfterSec);
+
   try {
     const body = await request.json();
     const { email, betType, legs, stake, totalOdds, potentialReturn } = body as {

@@ -8,7 +8,11 @@ A football prediction & betting tips platform built with **Next.js 16 (App Route
 - 📊 **Odds comparison** — per-bookmaker odds board (BetKing, 1xBet, SportyBet, Betway, 22Bet) with the best price highlighted and affiliate "Bet now" links (see [Affiliate links](#affiliate-links))
 - 📈 **Track record** — public, data-driven results history (won/lost/void) with win rate, ROI, and accuracy trend — updated live as tips are settled
 - 🧾 **Bet slips & bet placement** — singles through accumulators, Ksh stakes, auto-settlement when tips are resolved
+- 🔗 **Shareable bet slips** — one click turns any slip into a public page at `/slip/abc123` with a copy-to-clipboard button and a "get today's tips" CTA
+- 📱 **PWA** — installable on Android/iOS with offline app shell, standalone display, and home-screen icons
+- 💰 **Bankroll tracker** — your profile shows real bet history, per-bet P&L, ROI and a cumulative P&L chart (recharts)
 - 🔐 **Accounts & premium** — signup/sign-in (NextAuth credentials), premium plans via **Paystack** (daily/weekly/monthly passes), API-key settings panel
+- 🛡️ **Rate limiting** — in-memory per-IP limits on register, newsletter, bets, payments and password-reset endpoints
 - ⚽ **Live scores & standings** — live data from football-data.org with graceful demo fallback
 - 🎨 Dark/light mode, animations, fully responsive
 
@@ -65,6 +69,7 @@ npm run dev          # http://localhost:3000
 | `npm run build`   | Production build (standalone output)               |
 | `npm run start`   | Serve the standalone build (`bun .next/standalone/server.js`) |
 | `npm run lint`    | ESLint                                             |
+| `npm test`        | Vitest unit tests (`src/**/*.test.ts`)             |
 | `npm run db:push` | Sync Prisma schema to the database                 |
 | `npm run db:seed` | Seed tips (idempotent)                             |
 | `npm run db:reset`| Drop & recreate the database                       |
@@ -82,7 +87,9 @@ npm run dev          # http://localhost:3000
 | `GET /api/performance`         | Stakes, returns, ROI from real bets          |
 | `GET /api/admin/tips?history=true` | Settled tips (track record)              |
 | `POST /api/admin/tips`         | Create tip (PATCH/DELETE also supported)     |
-| `POST /api/auth/register`      | Register account                             |
+| `POST /api/slips`              | Create a shareable bet slip                 |
+| `GET /api/slips/[slug]`        | Public slip data (rendered at `/slip/[slug]`) |
+| `POST /api/auth/register`      | Register account (rate-limited)             |
 | `/api/auth/*`                  | NextAuth (csrf, callback, session, signout)  |
 | `POST /api/auth/reset-password`| Request password reset (stub — add mailer)   |
 | `POST /api/newsletter`         | Newsletter signup                            |
@@ -109,6 +116,18 @@ AFFILIATE_URL_TEMPLATE=https://track.your-affiliate.com/?a=123&m={bookmaker}&o={
 ```
 
 Placeholders: `{bookmaker}` `{odds}` `{home}` `{away}` `{prediction}`.
+
+## Rate limiting
+
+Sensitive endpoints (registration, password reset, newsletter, bet placement, payment initiation, slip sharing) are protected by an in-memory sliding-window limiter (`src/lib/rate-limit.ts`) keyed by IP. Exceeding the limit returns `429` with `Retry-After`. For multi-instance deployments, swap the map for a Redis-backed limiter.
+
+## PWA
+
+The app is installable: `src/app/manifest.ts` (manifest), `public/sw.js` (offline app shell + static caching), and icons in `public/icons/` (generated from `public/favicon.svg` with sharp). The service worker only registers in production builds. Add `https://` hosting for full installability on iOS.
+
+## Tests & CI
+
+Unit tests live next to the code (`src/lib/*.test.ts`) and run with Vitest (`npm test`). The GitHub Actions workflow (`.github/workflows/ci.yml`) runs install → prisma generate/validate → lint → test → build on every push and PR.
 
 ## Tip settlement
 

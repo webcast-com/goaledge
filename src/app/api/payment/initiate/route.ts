@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
+import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 // Plan pricing in Ksh
 const PLAN_PRICES: Record<string, number> = {
@@ -10,6 +11,10 @@ const PLAN_PRICES: Record<string, number> = {
 };
 
 export async function POST(request: NextRequest) {
+  // Rate limit: max 10 payment initiations per IP per minute
+  const rl = rateLimit(`payment:${getClientIp(request)}`, 10);
+  if (!rl.ok) return rateLimitResponse(rl.retryAfterSec);
+
   try {
     const body = await request.json();
     const { email, amount, plan } = body;

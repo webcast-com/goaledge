@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -10,6 +11,10 @@ const registerSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  // Rate limit: max 10 registrations per IP per minute
+  const rl = rateLimit(`register:${getClientIp(request)}`, 10);
+  if (!rl.ok) return rateLimitResponse(rl.retryAfterSec);
+
   try {
     const body = await request.json();
     const result = registerSchema.safeParse(body);

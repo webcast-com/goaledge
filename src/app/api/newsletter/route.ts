@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { getClientIp, rateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export async function POST(request: NextRequest) {
+  // Rate limit: max 10 signups per IP per minute
+  const rl = rateLimit(`newsletter:${getClientIp(request)}`, 10);
+  if (!rl.ok) return rateLimitResponse(rl.retryAfterSec);
+
   try {
     const body = await request.json()
     const { email } = body
