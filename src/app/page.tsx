@@ -50,6 +50,7 @@ import { PlaceBetModal } from "@/components/goaledge/modals/PlaceBetModal";
 import { ShareModal } from "@/components/goaledge/modals/ShareModal";
 import { AuthModal } from "@/components/goaledge/modals/AuthModal";
 import { AdminPanel } from "@/components/goaledge/modals/AdminPanel";
+import { OddsCompareModal } from "@/components/goaledge/modals/OddsCompareModal";
 import { ApiKeySettings } from "@/components/goaledge/modals/ApiKeySettings";
 
 // Lib
@@ -133,6 +134,7 @@ export default function HomePage() {
 
   const [historyFilter, setHistoryFilter] = useState<"all" | "won" | "lost" | "void">("all");
   const [historyPeriod, setHistoryPeriod] = useState<"week" | "month" | "all">("week");
+  const [compareTip, setCompareTip] = useState<Tip | null>(null);
   const [userProfileOpen, setUserProfileOpen] = useState(false);
   const [achievementsOpen, setAchievementsOpen] = useState(false);
   const [savedSlips, setSavedSlips] = useState<Array<{ id: string; legs: Tip[]; stake: string; savedAt: string }>>([]);
@@ -616,6 +618,7 @@ export default function HomePage() {
           onSetBookmarkedTips={setBookmarkedTips}
           onFetchTips={fetchTips}
           onSetSearchOpen={setSearchOpen}
+          onSetCompareTip={setCompareTip}
           onSeeAll={() => {
             setActiveFilter("All");
             document.getElementById("tips")?.scrollIntoView({ behavior: "smooth" });
@@ -724,6 +727,9 @@ export default function HomePage() {
         tip={shareTip}
         onClose={() => setShareModalOpen(false)}
       />
+
+      {/* Odds Comparison Modal */}
+      <OddsCompareModal tip={compareTip} onClose={() => setCompareTip(null)} />
 
       {/* Bet Slip Panel */}
       <BetSlipPanel

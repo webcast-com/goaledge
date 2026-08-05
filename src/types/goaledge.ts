@@ -67,6 +67,20 @@ export interface OddsFeedItem {
   timestamp: number;
 }
 
+export interface BookmakerOddsEntry {
+  bookmaker: string;
+  odds: number;
+  url: string;
+  isBest: boolean;
+}
+
+export interface OddsComparison {
+  tipId: string;
+  baseOdds: number;
+  best: BookmakerOddsEntry;
+  bookmakers: BookmakerOddsEntry[];
+}
+
 export interface AdminFormState {
   league: string;
   country: string;

@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { settleBetsForTip, isSettledStatus } from "@/lib/bet-settlement";
 
 // ─── Historical seed data for tip history ────────────────────────────────────
 function getHistoricalSeedTips() {
@@ -389,6 +390,15 @@ export async function PATCH(request: NextRequest) {
       where: { id },
       data: updateData,
     });
+
+    // When a tip is settled, auto-resolve every pending bet that includes it.
+    if (updateData.status && isSettledStatus(updateData.status)) {
+      try {
+        await settleBetsForTip(db, id);
+      } catch (error) {
+        console.error("Error settling bets for tip:", error);
+      }
+    }
 
     return NextResponse.json({ tip });
   } catch (error) {

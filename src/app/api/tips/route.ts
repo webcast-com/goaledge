@@ -66,8 +66,9 @@ export async function GET() {
       }
     }
 
-    // Fallback: check DB first, then seed
+    // Fallback: check DB first, then seed (featured board = upcoming only)
     const dbTips = await db.tip.findMany({
+      where: { status: "upcoming" },
       orderBy: { createdAt: "desc" },
       take: 12,
     });

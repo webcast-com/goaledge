@@ -6,13 +6,20 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
 
-    // In production, verify Paystack signature:
-    // const paystackSecret = process.env.PAYSTACK_SECRET_KEY!;
-    // const hash = crypto.createHmac("sha512", paystackSecret).update(body).digest("hex");
-    // const paystackSignature = request.headers.get("x-paystack-signature");
-    // if (hash !== paystackSignature) {
-    //   return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-    // }
+    // Verify the Paystack signature when a secret key is configured.
+    const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+    if (paystackSecret) {
+      const hash = crypto
+        .createHmac("sha512", paystackSecret)
+        .update(body)
+        .digest("hex");
+      const paystackSignature = request.headers.get("x-paystack-signature");
+      if (!paystackSignature || hash !== paystackSignature) {
+        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+      }
+    } else {
+      console.warn("[webhook] PAYSTACK_SECRET_KEY not set — accepting webhook without signature verification (demo mode)");
+    }
 
     const event = JSON.parse(body);
 

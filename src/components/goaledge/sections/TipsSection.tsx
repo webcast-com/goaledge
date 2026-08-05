@@ -1,9 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/goaledge/animations";
 import { RefreshCw, Search, ChevronRight, Star } from "lucide-react";
 import { toast } from "sonner";
-import type { Tip, LiveOddsData, ApiStatus } from "@/types/goaledge";
+import type { Tip, LiveOddsData, ApiStatus, OddsComparison } from "@/types/goaledge";
 import { TipCard } from "../TipCard";
 import { TipCardSkeleton } from "../TipCardSkeleton";
 
@@ -33,6 +34,7 @@ export function TipsSection({
   onFetchTips,
   onSetSearchOpen,
   onSeeAll,
+  onSetCompareTip,
 }: {
   loading: boolean;
   apiStatus: ApiStatus;
@@ -59,7 +61,30 @@ export function TipsSection({
   onFetchTips: () => void;
   onSetSearchOpen: (v: boolean) => void;
   onSeeAll: () => void;
+  onSetCompareTip: (tip: Tip) => void;
 }) {
+  // Fetch per-bookmaker odds comparisons once and keep them in sync with tips.
+  const [oddsComparisons, setOddsComparisons] = useState<Record<string, OddsComparison>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/odds")
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled || !data.comparisons) return;
+        const map: Record<string, OddsComparison> = {};
+        data.comparisons.forEach((c: OddsComparison) => {
+          map[c.tipId] = c;
+        });
+        setOddsComparisons(map);
+      })
+      .catch(() => {
+        // Odds comparison is optional — cards fall back to base odds.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tipsCount]);
   return (
     <section id="tips" className="scroll-mt-16 relative overflow-hidden mx-auto max-w-6xl px-4 py-16 sm:px-6">
       <FadeIn>
@@ -219,6 +244,8 @@ export function TipsSection({
                     return next;
                   });
                 }}
+                oddsComparison={oddsComparisons[tip.id] ?? null}
+                onCompare={() => onSetCompareTip(tip)}
               />
             </StaggerItem>
           ))

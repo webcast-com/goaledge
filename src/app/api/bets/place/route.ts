@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { settleBet } from "@/lib/bet-settlement";
 
 interface BetLeg {
   tipId: string;
@@ -132,18 +133,29 @@ export async function POST(request: NextRequest) {
       data: { result: JSON.stringify(legResults) },
     });
 
+    // If any leg is already settled (won/lost/void), resolve the bet immediately.
+    try {
+      await settleBet(db, bet.id);
+    } catch (error) {
+      console.error("Error settling bet at placement:", error);
+    }
+
+    const settled = await db.placedBet.findUnique({ where: { id: bet.id } });
+
     return NextResponse.json({
       success: true,
       bet: {
-        id: bet.id,
-        email: bet.email,
-        betType: bet.betType,
-        legs: JSON.parse(bet.legs),
-        stake: bet.stake,
-        totalOdds: bet.totalOdds,
-        potentialReturn: bet.potentialReturn,
-        status: bet.status,
-        createdAt: bet.createdAt,
+        id: settled!.id,
+        email: settled!.email,
+        betType: settled!.betType,
+        legs: JSON.parse(settled!.legs),
+        stake: settled!.stake,
+        totalOdds: settled!.totalOdds,
+        potentialReturn: settled!.potentialReturn,
+        status: settled!.status,
+        result: settled!.result ? JSON.parse(settled!.result) : null,
+        settledAt: settled!.settledAt,
+        createdAt: settled!.createdAt,
       },
     });
   } catch (error) {

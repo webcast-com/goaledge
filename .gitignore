@@ -54,3 +54,6 @@ server.log
 /skills/
 # npm lockfile (bun.lock is the source of truth)
 package-lock.json
+
+# keep the template committed
+!.env.example
