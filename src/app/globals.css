@@ -1,0 +1,1060 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* GoalEdge Custom Styles */
+
+/* Football pitch background */
+.bg-pitch {
+  background: linear-gradient(135deg, #064e3b 0%, #065f46 25%, #047857 50%, #065f46 75%, #064e3b 100%);
+  position: relative;
+}
+
+.bg-pitch::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 48px,
+      rgba(255, 255, 255, 0.03) 48px,
+      rgba(255, 255, 255, 0.03) 50px
+    );
+  pointer-events: none;
+}
+
+.bg-pitch::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 200px 200px at 20% 50%, rgba(16, 185, 129, 0.15), transparent),
+    radial-gradient(ellipse 300px 300px at 80% 30%, rgba(20, 184, 166, 0.1), transparent);
+  pointer-events: none;
+}
+
+/* Hero floating orbs */
+.hero-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+.hero-orb-1 {
+  width: 400px;
+  height: 400px;
+  top: -100px;
+  right: -100px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.35) 0%, transparent 70%);
+  animation: float-orb 8s ease-in-out infinite;
+}
+
+.hero-orb-2 {
+  width: 300px;
+  height: 300px;
+  bottom: -50px;
+  left: -50px;
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.25) 0%, transparent 70%);
+  animation: float-orb 10s ease-in-out infinite reverse;
+}
+
+@keyframes float-orb {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -20px) scale(1.05);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
+}
+
+/* Gradient text animation */
+.gradient-animate {
+  background-size: 200% 200%;
+  animation: gradient-shift 4s ease-in-out infinite;
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.7 0.02 260);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.55 0.02 260);
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Confidence bar animation */
+.confidence-bar {
+  transition: width 1s ease-out;
+}
+
+/* Tip card shimmer effect */
+.tip-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(16, 185, 129, 0.03),
+    transparent
+  );
+  transition: left 0.5s ease;
+  pointer-events: none;
+}
+
+.tip-card:hover::before {
+  left: 100%;
+}
+
+/* Pulse ring for live indicator */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.live-pulse::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse-ring 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* CTA section gradient animation */
+@keyframes cta-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.cta-gradient {
+  background-size: 200% 200%;
+  animation: cta-shimmer 6s ease-in-out infinite;
+}
+
+/* Star rating animation */
+@keyframes star-pop {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.star-animate {
+  animation: star-pop 0.3s ease-out forwards;
+}
+
+.star-animate:nth-child(1) { animation-delay: 0s; }
+.star-animate:nth-child(2) { animation-delay: 0.05s; }
+.star-animate:nth-child(3) { animation-delay: 0.1s; }
+.star-animate:nth-child(4) { animation-delay: 0.15s; }
+.star-animate:nth-child(5) { animation-delay: 0.2s; }
+
+/* Feature card hover glow */
+.feature-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #10b981, transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.feature-card:hover::after {
+  opacity: 1;
+}
+
+/* Hide scrollbar for filter tabs */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Sticky header scrolled state */
+header[data-scrolled="true"] {
+  backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* Dark mode feature card glow */
+.dark .feature-card::after {
+  background: linear-gradient(90deg, transparent, #059669, transparent);
+}
+
+/* Dark mode tip card hover */
+.dark .tip-card {
+  transition: all 0.2s ease;
+}
+
+/* Better dark mode section backgrounds */
+.dark .bg-slate-900\/80 {
+  background-color: rgba(15, 23, 42, 0.8);
+}
+
+/* Smooth dark mode transitions */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Toast notification styling override */
+[data-sonner-toaster] [data-sonner-toast] {
+  border-radius: 0.75rem !important;
+}
+
+/* Enhanced focus styles */
+button:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+
+/* Premium badge shimmer */
+@keyframes premium-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Smooth number transitions */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Improved dark mode text contrast */
+.dark .text-slate-400 {
+  color: rgb(148, 163, 184);
+}
+
+/* Mobile menu animation */
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+/* Modal backdrop animation */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* FAQ accordion smooth transition */
+/* The FAQ items use React state, transitions are handled by conditional rendering */
+
+/* League marquee animation */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Tip card enhanced hover border glow */
+.dark .tip-card:hover {
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2), 0 10px 25px -5px rgba(16, 185, 129, 0.1);
+}
+
+/* Feature card enhanced hover */
+.feature-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Stat card hover scale */
+.dark .group:hover .text-slate-300 {
+  color: rgb(226 232 240);
+}
+
+/* Search modal animation */
+@keyframes slide-down-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Notification dot pulse */
+@keyframes notif-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* Premium pricing card glow */
+.dark .ring-emerald-500\/30 {
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.08);
+}
+
+/* Mobile bottom bar safe area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .sm\:hidden {
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Live score card leading team highlight */
+.text-emerald-600 {
+  transition: color 0.3s ease;
+}
+
+/* Smooth focus ring transitions */
+button, input {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+/* FAQ accordion smooth slide animation */
+.faq-answer-wrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease-out;
+}
+
+.faq-answer-wrapper.open {
+  grid-template-rows: 1fr;
+}
+
+.faq-answer-inner {
+  overflow: hidden;
+}
+
+/* Dashed connecting line animation for How It Works */
+@keyframes dash-flow {
+  0% { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.step-connector line {
+  stroke-dasharray: 6 4;
+  animation: dash-flow 1.5s linear infinite;
+}
+
+/* CTA section floating elements */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-15px) rotate(3deg); }
+}
+
+@keyframes float-slower {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(-2deg); }
+}
+
+.cta-float-1 {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+.cta-float-2 {
+  animation: float-slower 8s ease-in-out infinite;
+  animation-delay: -2s;
+}
+
+/* Odds trend arrow pulse */
+@keyframes odds-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.odds-trend-falling {
+  animation: odds-pulse 2s ease-in-out infinite;
+}
+
+/* Tip results status bar animation */
+@keyframes result-fill {
+  from { width: 0%; }
+}
+
+.result-bar-fill {
+  animation: result-fill 1s ease-out;
+}
+
+/* Testimonial quote decoration */
+@keyframes quote-fade {
+  0%, 100% { opacity: 0.06; }
+  50% { opacity: 0.1; }
+}
+
+.quote-decoration {
+  animation: quote-fade 4s ease-in-out infinite;
+}
+
+/* Accumulator leg connector */
+.acca-leg-connector {
+  position: relative;
+}
+
+.acca-leg-connector::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 8px;
+  background: linear-gradient(to bottom, #10b981, transparent);
+}
+
+/* Stats card subtle gradient background */
+.stat-card-bg {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.04) 0%, transparent 100%);
+}
+
+.dark .stat-card-bg {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, transparent 100%);
+}
+
+/* Live score score change animation */
+@keyframes score-flash {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.score-highlight {
+  animation: score-flash 0.4s ease-out;
+}
+
+/* Premium pricing card animated border */
+@keyframes border-rotate {
+  0% { --angle: 0deg; }
+  100% { --angle: 360deg; }
+}
+
+.premium-card-glow {
+  position: relative;
+}
+
+.premium-card-glow::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 1rem;
+  padding: 1px;
+  background: linear-gradient(135deg, #10b981, #14b8a6, #06b6d4, #10b981);
+  background-size: 300% 300%;
+  animation: border-rotate 4s linear infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* Section divider with dot pattern */
+.section-dot-divider {
+  background-image: radial-gradient(circle, #cbd5e1 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.dark .section-dot-divider {
+  background-image: radial-gradient(circle, rgba(100, 116, 139, 0.3) 1px, transparent 1px);
+}
+
+/* Dashboard mockup glow */
+@keyframes dashboard-glow {
+  0%, 100% { box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.15), 0 0 0 1px rgba(255,255,255,0.05); }
+  50% { box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.25), 0 0 0 1px rgba(255,255,255,0.1); }
+}
+
+/* Gradient text for section headings */
+.section-heading {
+  background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .section-heading {
+  background: linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Wave section divider */
+.wave-divider {
+  position: relative;
+  overflow: hidden;
+  line-height: 0;
+}
+
+.wave-divider svg {
+  display: block;
+  width: 100%;
+  height: 48px;
+}
+
+.dark .wave-divider svg path {
+  fill: rgba(15, 23, 42, 0.5);
+}
+
+/* Match progress bar (half-time indicator) */
+.match-progress {
+  position: relative;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(148, 163, 184, 0.15);
+  overflow: hidden;
+}
+
+.match-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #10b981, #14b8a6);
+  transition: width 0.5s ease;
+}
+
+/* Live odds pulse dot */
+.odds-live-dot {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.odds-live-dot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse-ring 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Tip card glassmorphism in dark mode */
+.dark .tip-card-glass {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+  backdrop-filter: blur(12px) saturate(150%);
+  border-color: rgba(71, 85, 105, 0.4);
+}
+
+.dark .tip-card-glass:hover {
+  border-color: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.15), 0 20px 40px -12px rgba(0, 0, 0, 0.4), 0 0 30px rgba(16, 185, 129, 0.05);
+}
+
+/* Stake calculator popover */
+.stake-calc-popover {
+  animation: slide-down-fade 0.2s ease-out;
+}
+
+/* Live odds movement flash */
+@keyframes odds-flash-up {
+  0% { background-color: rgba(16, 185, 129, 0.2); }
+  100% { background-color: transparent; }
+}
+
+@keyframes odds-flash-down {
+  0% { background-color: rgba(239, 68, 68, 0.2); }
+  100% { background-color: transparent; }
+}
+
+.odds-flash-up {
+  animation: odds-flash-up 1.5s ease-out;
+}
+
+.odds-flash-down {
+  animation: odds-flash-down 1.5s ease-out;
+}
+
+/* Enhanced live score card */
+.live-score-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.live-score-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #ef4444, transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.live-score-card:hover::before {
+  opacity: 1;
+}
+
+/* Smooth number transition for odds */
+.odds-value {
+  transition: color 0.3s ease, transform 0.2s ease;
+  display: inline-block;
+}
+
+.odds-value.up {
+  color: #10b981;
+  transform: scale(1.1);
+}
+
+.odds-value.down {
+  color: #ef4444;
+  transform: scale(1.1);
+}
+
+/* Hero enhanced texture */
+.hero-texture {
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(20, 184, 166, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 60% 80%, rgba(6, 182, 212, 0.04) 0%, transparent 40%);
+}
+
+/* Mobile touch target improvement */
+@media (max-width: 640px) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Parallax hero effect */
+.hero-parallax {
+  will-change: transform;
+  transition: transform 0.1s linear;
+}
+
+/* Promo countdown animation */
+@keyframes countdown-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.98); }
+}
+
+.promo-countdown {
+  animation: countdown-pulse 2s ease-in-out infinite;
+}
+
+/* Gradient border for acca card hover */
+.acca-card-hover {
+  transition: all 0.3s ease;
+}
+
+.acca-card-hover:hover {
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.3), 0 20px 40px -12px rgba(245, 158, 11, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Quick Predict selection animation */
+@keyframes predict-select {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Form badge micro-animation */
+@keyframes form-pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Notification badge enhanced */
+.notif-badge {
+  animation: notif-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+.dark .notif-badge {
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+}
+
+/* Tip card light mode enhanced shadow */
+.tip-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.tip-card:hover {
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+}
+
+/* Light mode tip card glass */
+.tip-card-glass {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(226, 232, 240, 0.5);
+}
+
+.tip-card-glass:hover {
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(16, 185, 129, 0.3);
+}
+
+/* Bet slip panel slide animation */
+@keyframes slip-slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.bet-slip-panel {
+  animation: slip-slide-up 0.25s ease-out;
+}
+
+/* Odds boost badge shimmer */
+@keyframes boost-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.odds-boost-badge {
+  background: linear-gradient(90deg, #f59e0b, #f97316, #f59e0b);
+  background-size: 200% 100%;
+  animation: boost-shimmer 2s linear infinite;
+}
+
+/* Section reveal animation */
+@keyframes section-reveal {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Winner confetti effect */
+@keyframes confetti-fall {
+  0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(10px) rotate(360deg); opacity: 0; }
+}
+
+/* Header glassmorphism in light mode */
+header[data-scrolled="true"] {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+.dark header[data-scrolled="true"] {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Wave divider dark mode fix */
+.dark .wave-divider svg path {
+  fill: rgba(15, 23, 42, 0.95);
+}
+
+/* Footer social icon hover ring */
+.footer-social-btn {
+  transition: all 0.2s ease;
+}
+
+.footer-social-btn:hover {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+/* Loading skeleton shimmer */
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.dark .skeleton-shimmer {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+}
+
+/* Table row hover highlight */
+.table-row-highlight:hover {
+  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.03), transparent);
+}
+
+/* Keyboard shortcut hint styling */
+.kbd-hint {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid;
+  line-height: 1.4;
+}
+
+/* Auth modal backdrop blur */
+.auth-backdrop {
+  backdrop-filter: blur(8px) saturate(150%);
+}
+
+/* Tip Detail Panel — full-screen slide-up on mobile, slide-right on desktop */
+.tip-detail-panel {
+  animation: tip-panel-slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes tip-panel-slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (min-width: 640px) {
+  .tip-detail-panel {
+    animation: tip-panel-slide-right 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+@keyframes tip-panel-slide-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Payment Modal — slide-up on mobile, scale-in on desktop */
+.payment-modal-slide {
+  animation: payment-modal-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes payment-modal-in {
+  from {
+    transform: translateY(40px) scale(0.97);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@media (min-width: 640px) {
+  .payment-modal-slide {
+    animation: payment-modal-desktop 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+@keyframes payment-modal-desktop {
+  from {
+    transform: scale(0.95) translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Hide scrollbar for tab navigation */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Section label badge micro-interaction */
+.section-badge {
+  transition: all 0.2s ease;
+}
+
+.section-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Notification badge pulse */
+@keyframes notif-badge-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-notif-badge {
+  animation: notif-badge-pulse 2s ease-in-out infinite;
+}
+
+/* Live stats ticker scroll */
+@keyframes scroll-ticker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll-ticker 30s linear infinite;
+}
