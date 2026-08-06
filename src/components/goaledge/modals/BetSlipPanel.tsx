@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { Tip, BetType, LiveOddsData } from "@/types/goaledge";
 import {
   Ticket,
@@ -9,6 +10,10 @@ import {
   CheckCircle2,
   Trash2,
   Star,
+  Share2,
+  Copy,
+  Check,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -65,7 +70,52 @@ export function BetSlipPanel({
   onPlaceBet,
   liveOdds,
 }: BetSlipPanelProps) {
+  const [sharing, setSharing] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const [copied, setCopied] = useState(false);
+
   if (!open) return null;
+
+  const handleShare = async () => {
+    if (betSlip.length === 0) return;
+    setSharing(true);
+    try {
+      const res = await fetch("/api/slips", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          legs: betSlip.map((t) => ({
+            homeTeam: t.homeTeam,
+            awayTeam: t.awayTeam,
+            league: t.league,
+            prediction: t.prediction,
+            predictionType: t.predictionType,
+            odds: t.odds,
+            matchTime: t.matchTime,
+          })),
+          stake: parseInt(stake) || null,
+          totalOdds: parseFloat(potentialReturn) && parseInt(stake) ? parseFloat(potentialReturn) / (parseInt(stake) || 1) : null,
+          potentialReturn: parseInt(potentialReturn) || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to share slip");
+      const url = new URL(data.url, window.location.origin).toString();
+      setShareUrl(url);
+      toast.success("Slip shared! Link copied to clipboard");
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        // clipboard unavailable — link is shown inline anyway
+      }
+    } catch {
+      toast.error("Failed to share slip. Please try again.");
+    } finally {
+      setSharing(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50">
@@ -332,6 +382,28 @@ export function BetSlipPanel({
               )}
             </div>
 
+            {shareUrl && (
+              <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/60 px-3 py-2.5 dark:border-emerald-800/50 dark:bg-emerald-950/20">
+                <p className="min-w-0 flex-1 truncate text-xs font-semibold text-emerald-700 dark:text-emerald-400">{shareUrl}</p>
+                <button
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(shareUrl);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                      toast.success("Link copied!");
+                    } catch {
+                      toast.error("Could not copy link");
+                    }
+                  }}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white transition hover:bg-emerald-700"
+                  title="Copy link"
+                >
+                  {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                </button>
+              </div>
+            )}
+
             <div className="mt-3 flex gap-2">
               <button
                 onClick={() => {
@@ -358,6 +430,14 @@ export function BetSlipPanel({
               >
                 <Star className="h-3.5 w-3.5" />
                 Save Slip
+              </button>
+              <button
+                onClick={handleShare}
+                disabled={sharing}
+                className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                {sharing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Share2 className="h-3.5 w-3.5" />}
+                Share
               </button>
               <button
                 onClick={() => {

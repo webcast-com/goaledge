@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { X, RefreshCw, ArrowLeft, Mail } from "lucide-react";
+import { useRef, useState } from "react";
+import { X, RefreshCw, ArrowLeft, Mail, Gift, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 export interface AuthModalProps {
@@ -13,6 +13,7 @@ export interface AuthModalProps {
   email: string;
   password: string;
   confirm: string;
+  referralCode: string;
   onClose: () => void;
   onSetMode: (m: "signin" | "signup") => void;
   onSetError: (e: string) => void;
@@ -21,6 +22,7 @@ export interface AuthModalProps {
   onSetEmail: (e: string) => void;
   onSetPassword: (p: string) => void;
   onSetConfirm: (c: string) => void;
+  onSetReferralCode: (v: string) => void;
 }
 
 export function AuthModal({
@@ -32,6 +34,7 @@ export function AuthModal({
   email,
   password,
   confirm,
+  referralCode,
   onClose,
   onSetMode,
   onSetError,
@@ -40,10 +43,49 @@ export function AuthModal({
   onSetEmail,
   onSetPassword,
   onSetConfirm,
+  onSetReferralCode,
 }: AuthModalProps) {
   const [resetMode, setResetMode] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
+  const [refStatus, setRefStatus] = useState<"idle" | "validating" | "valid" | "invalid">("idle");
+  const [refName, setRefName] = useState("");
+  const refTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const validateReferralCode = (code: string) => {
+    if (refTimeout.current) clearTimeout(refTimeout.current);
+    const trimmed = code.trim();
+    if (!trimmed) {
+      setRefStatus("idle");
+      setRefName("");
+      return;
+    }
+    if (trimmed.length < 4) {
+      setRefStatus("idle");
+      return;
+    }
+    refTimeout.current = setTimeout(async () => {
+      setRefStatus("validating");
+      try {
+        const res = await fetch("/api/referrals/validate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: trimmed }),
+        });
+        const data = await res.json();
+        if (data.valid) {
+          setRefStatus("valid");
+          setRefName(data.referrerName || "");
+        } else {
+          setRefStatus("invalid");
+          setRefName("");
+        }
+      } catch {
+        setRefStatus("idle");
+        setRefName("");
+      }
+    }, 500);
+  };
 
   const handleResetSubmit = async () => {
     if (!resetEmail.trim()) {
@@ -198,7 +240,12 @@ export function AuthModal({
                       const res = await fetch("/api/auth/register", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ name, email, password }),
+                        body: JSON.stringify({
+                          name,
+                          email,
+                          password,
+                          referralCode: referralCode.trim() || undefined,
+                        }),
                       });
                       const data = await res.json();
                       if (!res.ok) {
@@ -280,6 +327,46 @@ export function AuthModal({
                       disabled={loading}
                       className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 disabled:opacity-50"
                     />
+                  </div>
+                )}
+                {mode === "signup" && (
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Referral code <span className="font-normal text-slate-400">(optional)</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={referralCode}
+                        onChange={(e) => {
+                          onSetReferralCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10));
+                          validateReferralCode(e.target.value);
+                        }}
+                        placeholder="e.g. K7X2PQ"
+                        disabled={loading}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 pr-10 text-sm uppercase text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 disabled:opacity-50"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                        {refStatus === "validating" && <RefreshCw className="h-4 w-4 animate-spin text-slate-400" />}
+                        {refStatus === "valid" && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
+                        {refStatus === "invalid" && <X className="h-4 w-4 text-red-400" />}
+                      </span>
+                    </div>
+                    {refStatus === "valid" && (
+                      <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                        <Gift className="h-3 w-3" /> Code from {refName} — you'll get 2 free premium days!
+                      </p>
+                    )}
+                    {refStatus === "invalid" && (
+                      <p className="mt-1.5 text-xs font-medium text-red-500 dark:text-red-400">
+                        That code doesn't exist — check and try again, or leave it empty.
+                      </p>
+                    )}
+                    {refStatus === "idle" && (
+                      <p className="mt-1.5 text-xs text-slate-400">
+                        Invited by a friend? Enter their code for 2 free premium days.
+                      </p>
+                    )}
                   </div>
                 )}
                 {mode === "signin" && (

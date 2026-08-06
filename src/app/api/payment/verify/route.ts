@@ -13,12 +13,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // In production, verify with Paystack:
-    // const paystackRes = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
-    //   headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
-    // });
-    // const paystackData = await paystackRes.json();
-
     // Find the payment in DB
     const payment = await db.payment.findUnique({
       where: { reference },
@@ -31,9 +25,53 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Simulate verification: mark as completed after a short delay
-    // In production, use paystackData.data.status === "success"
-    const isSuccessful = true; // simulated
+    // Real Paystack verification when the secret key is configured.
+    let isSuccessful = false;
+    let isFailed = false;
+    let channel: string | null = null;
+
+    const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+    if (paystackSecret) {
+      try {
+        const paystackRes = await fetch(
+          `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
+          { headers: { Authorization: `Bearer ${paystackSecret}` }, signal: AbortSignal.timeout(15000) }
+        );
+        const paystackData = await paystackRes.json();
+        if (!paystackRes.ok || !paystackData.status) {
+          return NextResponse.json(
+            { error: paystackData.message || "Paystack verification failed" },
+            { status: 502 }
+          );
+        }
+        const psStatus = paystackData.data?.status;
+        if (psStatus === "success") {
+          isSuccessful = true;
+          channel = paystackData.data.channel || "card";
+        } else if (psStatus === "failed" || psStatus === "abandoned") {
+          isFailed = true;
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Paystack unreachable";
+        console.error("Paystack verify error:", msg);
+        return NextResponse.json(
+          { error: `Paystack connection failed: ${msg}` },
+          { status: 502 }
+        );
+      }
+    } else {
+      // Demo mode (no PAYSTACK_SECRET_KEY): simulate a successful charge.
+      isSuccessful = true;
+      channel = "card";
+    }
+
+    if (isFailed) {
+      await db.payment.update({
+        where: { reference },
+        data: { status: "failed", updatedAt: new Date() },
+      });
+      return NextResponse.json({ status: "failed", message: "Payment failed" });
+    }
 
     if (isSuccessful && payment.status === "pending") {
       const now = new Date();
@@ -44,7 +82,7 @@ export async function POST(request: NextRequest) {
         data: {
           status: "completed",
           paidAt: now,
-          channel: "card", // simulated
+          channel: channel || "card",
           updatedAt: now,
         },
       });
@@ -75,6 +113,20 @@ export async function POST(request: NextRequest) {
             data: { userId: user.id },
           });
         }
+      }
+
+      // Referral reward: first completed payment by a referred user
+      // credits their referrer with free premium days (idempotent).
+      try {
+        const { rewardReferrerForPayment } = await import("@/lib/referrals");
+        const reward = await rewardReferrerForPayment(db, payment.email);
+        if (reward.rewarded) {
+          console.log(
+            `[referral] Referrer rewarded +${reward.rewardDays} days for ${payment.email}`
+          );
+        }
+      } catch (error) {
+        console.error("Referral reward error:", error);
       }
 
       return NextResponse.json({

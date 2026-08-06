@@ -50,6 +50,7 @@ import { PlaceBetModal } from "@/components/goaledge/modals/PlaceBetModal";
 import { ShareModal } from "@/components/goaledge/modals/ShareModal";
 import { AuthModal } from "@/components/goaledge/modals/AuthModal";
 import { AdminPanel } from "@/components/goaledge/modals/AdminPanel";
+import { OddsCompareModal } from "@/components/goaledge/modals/OddsCompareModal";
 import { ApiKeySettings } from "@/components/goaledge/modals/ApiKeySettings";
 
 // Lib
@@ -104,6 +105,7 @@ export default function HomePage() {
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authConfirm, setAuthConfirm] = useState("");
+  const [authReferralCode, setAuthReferralCode] = useState("");
   const [authError, setAuthError] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifPrefs, setNotifPrefs] = useState({ newTips: true, results: true, odds: true, promotions: false });
@@ -133,6 +135,7 @@ export default function HomePage() {
 
   const [historyFilter, setHistoryFilter] = useState<"all" | "won" | "lost" | "void">("all");
   const [historyPeriod, setHistoryPeriod] = useState<"week" | "month" | "all">("week");
+  const [compareTip, setCompareTip] = useState<Tip | null>(null);
   const [userProfileOpen, setUserProfileOpen] = useState(false);
   const [achievementsOpen, setAchievementsOpen] = useState(false);
   const [savedSlips, setSavedSlips] = useState<Array<{ id: string; legs: Tip[]; stake: string; savedAt: string }>>([]);
@@ -163,6 +166,17 @@ export default function HomePage() {
     { id: "n4", title: "New Premium Tip", message: "PSG vs Lyon — BTTS Yes @ 1.80", time: "1 hr ago", type: "tip" },
     { id: "n5", title: "Accumulator Won! 🏆", message: "4-fold acca returned Ksh 3,100", time: "2 hr ago", type: "win" },
   ];
+
+  // Referral link handling: /?ref=CODE prefills the signup form and opens it
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref && ref.trim()) {
+      setAuthReferralCode(ref.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10));
+      setAuthMode("signup");
+      setAuthOpen(true);
+    }
+  }, []);
 
   // Scroll detection for sticky header + parallax
   useEffect(() => {
@@ -616,6 +630,7 @@ export default function HomePage() {
           onSetBookmarkedTips={setBookmarkedTips}
           onFetchTips={fetchTips}
           onSetSearchOpen={setSearchOpen}
+          onSetCompareTip={setCompareTip}
           onSeeAll={() => {
             setActiveFilter("All");
             document.getElementById("tips")?.scrollIntoView({ behavior: "smooth" });
@@ -724,6 +739,9 @@ export default function HomePage() {
         tip={shareTip}
         onClose={() => setShareModalOpen(false)}
       />
+
+      {/* Odds Comparison Modal */}
+      <OddsCompareModal tip={compareTip} onClose={() => setCompareTip(null)} />
 
       {/* Bet Slip Panel */}
       <BetSlipPanel
@@ -864,6 +882,7 @@ export default function HomePage() {
         email={authEmail}
         password={authPassword}
         confirm={authConfirm}
+        referralCode={authReferralCode}
         onClose={() => setAuthOpen(false)}
         onSetMode={setAuthMode}
         onSetError={setAuthError}
@@ -872,6 +891,7 @@ export default function HomePage() {
         onSetEmail={setAuthEmail}
         onSetPassword={setAuthPassword}
         onSetConfirm={setAuthConfirm}
+        onSetReferralCode={setAuthReferralCode}
       />
 
       {/* Place Bet Modal */}

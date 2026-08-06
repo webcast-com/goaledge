@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
+import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 // Plan pricing in Ksh
 const PLAN_PRICES: Record<string, number> = {
@@ -10,6 +11,10 @@ const PLAN_PRICES: Record<string, number> = {
 };
 
 export async function POST(request: NextRequest) {
+  // Rate limit: max 10 payment initiations per IP per minute
+  const rl = rateLimit(`payment:${getClientIp(request)}`, 10);
+  if (!rl.ok) return rateLimitResponse(rl.retryAfterSec);
+
   try {
     const body = await request.json();
     const { email, amount, plan } = body;
@@ -50,24 +55,53 @@ export async function POST(request: NextRequest) {
     }
 
     const reference = `GE_${Date.now()}_${randomUUID().replace(/-/g, "").slice(0, 8)}`;
-    const accessCode = randomUUID().replace(/-/g, "").slice(0, 20);
+    let accessCode = randomUUID().replace(/-/g, "").slice(0, 20);
+    let authorizationUrl = `https://checkout.paystack.com/${accessCode}?ref=${reference}`;
+    let mode: "live" | "demo" = "demo";
 
-    // In production, you would call Paystack's Initialize Transaction API here:
-    // const paystackRes = await fetch("https://api.paystack.co/transaction/initialize", {
-    //   method: "POST",
-    //   headers: {
-    //     Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify({
-    //     email,
-    //     amount: amountNum * 100, // Paystack expects amount in kobo/cents
-    //     currency: "KES",
-    //     reference,
-    //     metadata: { plan, custom_fields: [{ display_name: "Plan", variable_name: "plan", value: plan }] },
-    //   }),
-    // });
-    // const paystackData = await paystackRes.json();
+    // Real Paystack integration — used when PAYSTACK_SECRET_KEY is configured.
+    const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+    if (paystackSecret) {
+      try {
+        const paystackRes = await fetch("https://api.paystack.co/transaction/initialize", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${paystackSecret}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            amount: amountNum * 100, // Paystack expects amount in cents (KES)
+            currency: "KES",
+            reference,
+            metadata: {
+              plan,
+              custom_fields: [
+                { display_name: "Plan", variable_name: "plan", value: plan },
+              ],
+            },
+          }),
+          signal: AbortSignal.timeout(15000),
+        });
+        const paystackData = await paystackRes.json();
+        if (!paystackRes.ok || !paystackData.status || !paystackData.data?.authorization_url) {
+          return NextResponse.json(
+            { error: paystackData.message || "Paystack initialization failed" },
+            { status: 502 }
+          );
+        }
+        authorizationUrl = paystackData.data.authorization_url;
+        accessCode = paystackData.data.access_code || accessCode;
+        mode = "live";
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Paystack unreachable";
+        console.error("Paystack initialize error:", msg);
+        return NextResponse.json(
+          { error: `Paystack connection failed: ${msg}` },
+          { status: 502 }
+        );
+      }
+    }
 
     // Calculate expiry
     const now = new Date();
@@ -90,14 +124,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Simulated Paystack authorization URL
-    // In production, use: paystackData.data.authorization_url
-    const authorizationUrl = `https://checkout.paystack.com/${accessCode}?ref=${reference}`;
-
     return NextResponse.json({
       authorization_url: authorizationUrl,
       access_code: accessCode,
       reference,
+      mode,
     });
   } catch (error) {
     console.error("Error initiating payment:", error);

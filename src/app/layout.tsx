@@ -1,18 +1,29 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import AuthProvider from "@/components/goaledge/auth-provider";
+import { ServiceWorkerRegister } from "@/components/goaledge/service-worker-register";
 
-const geistSans = Geist({
+export const viewport: Viewport = {
+  themeColor: "#10b981",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
+// Self-hosted Geist fonts (no runtime dependency on Google Fonts)
+const geistSans = localFont({
+  src: "./fonts/Geist-Variable.woff2",
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: "./fonts/GeistMono-Variable.woff2",
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -31,8 +42,15 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "GoalEdge" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/favicon.svg",
+    apple: "/icons/icon-192.png",
   },
+  appleWebApp: {
+    capable: true,
+    title: "GoalEdge",
+    statusBarStyle: "black-translucent",
+  },
+  manifest: "/manifest.webmanifest",
   openGraph: {
     title: "GoalEdge — Smarter Football Predictions",
     description: "Predict smarter. Win more often. Expert tips across 10+ leagues.",
@@ -67,6 +85,7 @@ export default function RootLayout({
           </AuthProvider>
         </ThemeProvider>
         <Toaster />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

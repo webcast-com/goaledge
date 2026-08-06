@@ -65,31 +65,60 @@ export function PaymentFlowModal({
 
       setPaymentRef(data.reference);
 
-      // 2. In production, open Paystack popup here:
-      // const script = document.createElement("script");
-      // script.src = "https://js.paystack.co/v2/inline.js";
-      // script.onload = () => {
-      //   const handler = (window as any).PaystackPop.setup({
-      //     key: process.env.NEXT_PUBLIC_PAYSTACK_KEY,
-      //     email: email.trim(),
-      //     amount: currentPlan.amount * 100,
-      //     currency: "KES",
-      //     reference: data.reference,
-      //     onClose: () => { setStep("form"); setLoading(false); },
-      //     callback: async () => {
-      //       // Verify payment
-      //       const verifyRes = await fetch("/api/payment/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ reference: data.reference }) });
-      //       const verifyData = await verifyRes.json();
-      //       if (verifyData.status === "success") { setStep("success"); onAuthenticated(email.trim()); }
-      //       else { setErrorMsg("Payment verification failed"); setStep("error"); }
-      //       setLoading(false);
-      //     },
-      //   });
-      //   handler.openIframe();
-      // };
-      // document.body.appendChild(script);
+      // 2. Real Paystack popup — used when NEXT_PUBLIC_PAYSTACK_KEY is configured.
+      const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_KEY;
+      if (publicKey) {
+        try {
+          await new Promise<void>((resolve, reject) => {
+            const existing = document.getElementById("paystack-inline-script");
+            if (existing) return resolve();
+            const script = document.createElement("script");
+            script.id = "paystack-inline-script";
+            script.src = "https://js.paystack.co/v2/inline.js";
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error("Failed to load Paystack"));
+            document.body.appendChild(script);
+          });
 
-      // Simulate Paystack popup flow (auto-verify after 2s)
+          const popup = (window as unknown as { PaystackPop?: { setup: (opts: Record<string, unknown>) => { openIframe: () => void } } }).PaystackPop;
+          if (!popup) throw new Error("Paystack unavailable");
+
+          popup.setup({
+            key: publicKey,
+            email: email.trim(),
+            amount: currentPlan.amount * 100, // Paystack expects cents
+            currency: "KES",
+            ref: data.reference,
+            onClose: () => {
+              setStep("form");
+              setLoading(false);
+            },
+            callback: async () => {
+              // Verify the charge server-side before unlocking premium
+              const verifyRes = await fetch("/api/payment/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ reference: data.reference }),
+              });
+              const verifyData = await verifyRes.json();
+              if (verifyData.status === "success") {
+                setStep("success");
+                onAuthenticated(email.trim());
+              } else {
+                setErrorMsg(verifyData.error || "Payment verification failed");
+                setStep("error");
+              }
+              setLoading(false);
+            },
+          }).openIframe();
+          return; // popup owns the flow from here
+        } catch {
+          // Fall through to demo simulation if the Paystack script can't load
+          setErrorMsg("");
+        }
+      }
+
+      // 3. Demo simulation (auto-verify after 2s) — used when no public key is set
       await new Promise(r => setTimeout(r, 2000));
       const verifyRes = await fetch("/api/payment/verify", {
         method: "POST",

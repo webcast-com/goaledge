@@ -15,7 +15,7 @@ import {
   Plus,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { Tip, LiveOddsData } from "@/types/goaledge";
+import type { Tip, LiveOddsData, OddsComparison } from "@/types/goaledge";
 import { MatchCountdown } from "@/components/goaledge/MatchCountdown";
 
 export function TipCard({
@@ -33,6 +33,8 @@ export function TipCard({
   onCalcStakeChange,
   isBookmarked,
   onToggleBookmark,
+  oddsComparison,
+  onCompare,
 }: {
   tip: Tip;
   onView: () => void;
@@ -48,6 +50,8 @@ export function TipCard({
   onCalcStakeChange?: (v: string) => void;
   isBookmarked?: boolean;
   onToggleBookmark?: () => void;
+  oddsComparison?: OddsComparison | null;
+  onCompare?: () => void;
 }) {
   const currentOdds = liveOddsData?.odds ?? tip.odds;
   const potentialReturn = (parseFloat(currentOdds) * (parseFloat(calcStake ?? "100") || 0)).toFixed(0);
@@ -143,24 +147,47 @@ export function TipCard({
       </div>
 
               {/* Odds Comparison */}
-              <div className="mt-2 flex items-center gap-1.5">
+              <div className="mt-2 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                 <span className="text-[10px] font-medium text-slate-400">Best odds:</span>
-                {[
-                  { book: "BetKing", odds: (parseFloat(tip.odds) - 0.05).toFixed(2), best: false },
-                  { book: "1xBet", odds: tip.odds, best: true },
-                  { book: "Sporty", odds: (parseFloat(tip.odds) + 0.1).toFixed(2), best: false },
-                ].map((b) => (
-                  <span
-                    key={b.book}
-                    className={`rounded px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
-                      b.best
-                        ? "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:ring-emerald-800"
-                        : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
-                    }`}
-                  >
-                    {b.odds}
-                  </span>
-                ))}
+                {oddsComparison ? (
+                  <>
+                    {[...oddsComparison.bookmakers]
+                      .sort((a, b) => b.odds - a.odds)
+                      .slice(0, 3)
+                      .map((b) => (
+                        <span
+                          key={b.bookmaker}
+                          className={`rounded px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+                            b.isBest
+                              ? "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:ring-emerald-800"
+                              : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                          }`}
+                        >
+                          {b.odds.toFixed(2)}
+                        </span>
+                      ))}
+                    <button
+                      onClick={onCompare}
+                      className="ml-auto inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold text-emerald-600 transition hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                      title="Compare odds across all bookmakers"
+                    >
+                      Compare all
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                      {tip.odds}
+                    </span>
+                    <button
+                      onClick={onCompare}
+                      className="ml-auto inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold text-emerald-600 transition hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                      title="Compare odds across all bookmakers"
+                    >
+                      Compare
+                    </button>
+                  </>
+                )}
               </div>
 
       {/* Confidence */}
