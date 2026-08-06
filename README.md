@@ -11,6 +11,7 @@ A football prediction & betting tips platform built with **Next.js 16 (App Route
 - 🔗 **Shareable bet slips** — one click turns any slip into a public page at `/slip/abc123` with a copy-to-clipboard button and a "get today's tips" CTA
 - 📱 **PWA** — installable on Android/iOS with offline app shell, standalone display, and home-screen icons
 - 💰 **Bankroll tracker** — your profile shows real bet history, per-bet P&L, ROI and a cumulative P&L chart (recharts)
+- 🎁 **Referral program** — every account has an invite code (`/?ref=CODE`); a referred signup grants the new user 2 free premium days, and the referrer earns 7 free premium days once their friend completes a first payment
 - 🔐 **Accounts & premium** — signup/sign-in (NextAuth credentials), premium plans via **Paystack** (daily/weekly/monthly passes), API-key settings panel
 - 🛡️ **Rate limiting** — in-memory per-IP limits on register, newsletter, bets, payments and password-reset endpoints
 - ⚽ **Live scores & standings** — live data from football-data.org with graceful demo fallback
@@ -89,6 +90,8 @@ npm run dev          # http://localhost:3000
 | `POST /api/admin/tips`         | Create tip (PATCH/DELETE also supported)     |
 | `POST /api/slips`              | Create a shareable bet slip                 |
 | `GET /api/slips/[slug]`        | Public slip data (rendered at `/slip/[slug]`) |
+| `GET /api/referrals?email=`    | Referral code, stats & referral list        |
+| `POST /api/referrals/validate` | Check a referral code before signup         |
 | `POST /api/auth/register`      | Register account (rate-limited)             |
 | `/api/auth/*`                  | NextAuth (csrf, callback, session, signout)  |
 | `POST /api/auth/reset-password`| Request password reset (stub — add mailer)   |
@@ -116,6 +119,15 @@ AFFILIATE_URL_TEMPLATE=https://track.your-affiliate.com/?a=123&m={bookmaker}&o={
 ```
 
 Placeholders: `{bookmaker}` `{odds}` `{home}` `{away}` `{prediction}`.
+
+## Referral program
+
+- Every user gets a unique 6-char invite code (auto-generated at signup; existing users get one via `npm run db:seed` or on first visit to the Referrals tab).
+- Share your link (`https://yoursite.com/?ref=CODE`) — it opens the signup form with the code prefilled and validated live.
+- **Referee benefit:** 2 free premium days at signup (zero-amount `referral_bonus` payment).
+- **Referrer benefit:** 7 free premium days per referred friend who completes their first payment (zero-amount `referral_reward` payment, extending from the referrer's current expiry — never shortens an active subscription).
+- Rewards are idempotent: one reward per referred user (pending → rewarded), enforced in `src/lib/referrals.ts` and covered by unit tests.
+- Management UI lives in Profile → Referrals (link + copy button, stats, referral list with statuses).
 
 ## Rate limiting
 

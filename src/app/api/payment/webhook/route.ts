@@ -64,6 +64,20 @@ export async function POST(request: NextRequest) {
             });
           }
         }
+
+        // Referral reward: first completed payment by a referred user
+        // credits their referrer with free premium days (idempotent).
+        try {
+          const { rewardReferrerForPayment } = await import("@/lib/referrals");
+          const reward = await rewardReferrerForPayment(db, payment.email);
+          if (reward.rewarded) {
+            console.log(
+              `[referral] Referrer rewarded +${reward.rewardDays} days for ${payment.email}`
+            );
+          }
+        } catch (error) {
+          console.error("Referral reward error:", error);
+        }
       }
     }
 

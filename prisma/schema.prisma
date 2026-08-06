@@ -11,17 +11,37 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  name      String?
-  password  String?
-  image     String?
-  plan      String    @default("free") // "free" | "premium"
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String?
+  password     String?
+  image        String?
+  plan         String    @default("free") // "free" | "premium"
+  referralCode String?   @unique // unique invite code, e.g. "K7X2PQ"
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  betSlips BetSlip[]
+  betSlips  BetSlip[]
   bookmarks Bookmark[]
+  referrals Referral[] @relation("ReferralsGiven") // users this user referred
+  referred  Referral[] @relation("ReferralReceived") // the referral that brought this user in
+}
+
+model Referral {
+  id          String    @id @default(cuid())
+  code        String // the invite code that was used
+  referrerId  String
+  referredId  String    @unique // one referral record per referred user
+  status      String    @default("pending") // "pending" | "qualified" | "rewarded"
+  rewardDays  Int       @default(7) // premium days the referrer earns
+  createdAt   DateTime  @default(now())
+  qualifiedAt DateTime?
+  rewardedAt  DateTime?
+
+  referrer User @relation("ReferralsGiven", fields: [referrerId], references: [id])
+  referred User @relation("ReferralReceived", fields: [referredId], references: [id])
+
+  @@index([referrerId])
 }
 
 model Bookmark {

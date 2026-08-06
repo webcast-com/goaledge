@@ -164,6 +164,25 @@ async function main() {
     updated++;
   }
 
+  // Backfill referral codes for existing users (accounts created before the
+  // referral program existed).
+  const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const makeCode = () =>
+    Array.from({ length: 6 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join("");
+  const usersWithoutCode = await db.user.findMany({ where: { referralCode: null }, select: { id: true } });
+  for (const u of usersWithoutCode) {
+    let code = makeCode();
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const clash = await db.user.findUnique({ where: { referralCode: code } });
+      if (!clash) break;
+      code = makeCode();
+    }
+    await db.user.update({ where: { id: u.id }, data: { referralCode: code } });
+  }
+  if (usersWithoutCode.length > 0) {
+    console.log(`Backfilled referral codes for ${usersWithoutCode.length} existing user(s).`);
+  }
+
   const counts = {
     upcoming: await db.tip.count({ where: { status: "upcoming" } }),
     settled: await db.tip.count({ where: { status: { in: ["won", "lost", "void"] } } }),

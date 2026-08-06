@@ -3,11 +3,17 @@ import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import {
+  generateReferralCode,
+  normalizeCode,
+  applyReferralOnSignup,
+} from "@/lib/referrals";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  referralCode: z.string().trim().max(20).optional(),
 });
 
 export async function POST(request: Request) {
@@ -27,6 +33,9 @@ export async function POST(request: Request) {
     }
 
     const { name, email, password } = result.data;
+    const referralCode = result.data.referralCode
+      ? normalizeCode(result.data.referralCode)
+      : "";
 
     // Check if user already exists
     const existingUser = await db.user.findUnique({ where: { email } });
@@ -40,27 +49,41 @@ export async function POST(request: Request) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
+    // Generate a unique referral code for the new user
+    let code = generateReferralCode();
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const clash = await db.user.findUnique({ where: { referralCode: code } });
+      if (!clash) break;
+      code = generateReferralCode();
+    }
+
     // Create user
     const user = await db.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
+        referralCode: code,
       },
       select: {
         id: true,
         email: true,
         name: true,
         plan: true,
+        referralCode: true,
         createdAt: true,
       },
     });
+
+    // Apply referral code if provided (links accounts + grants bonus days)
+    const referral = await applyReferralOnSignup(db, user.id, user.email, referralCode);
 
     return NextResponse.json(
       {
         success: true,
         message: "Account created successfully!",
         user,
+        referral,
       },
       { status: 201 }
     );
