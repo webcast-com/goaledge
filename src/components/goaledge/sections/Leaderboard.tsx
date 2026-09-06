@@ -35,7 +35,7 @@ export function Leaderboard({
                   className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all capitalize ${
                     leaderboardPeriod === p
                       ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/20"
-                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 dark:text-slate-400 dark:hover:bg-slate-700"
+                      : "text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 dark:text-slate-400 dark:hover:bg-slate-700"
                   }`}
                 >
                   {p === "all" ? "All Time" : p}
@@ -69,13 +69,13 @@ export function Leaderboard({
                 ].map((row) => (
                   <tr key={row.rank} className={`table-row-highlight transition-all ${row.highlight ? "bg-emerald-50/50 dark:bg-emerald-950/20" : ""}`}>
                     <td className="px-4 py-3.5 text-center text-xs">
-                      <span className={`inline-flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold ${row.rank <= 3 ? "bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-sm" : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}`}>
+                      <span className={`inline-flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold ${row.rank <= 3 ? "bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-sm" : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}`}>
                         {row.badge}
                       </span>
                     </td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2">
-                        <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white ${row.rank === 1 ? "bg-emerald-500" : row.rank === 2 ? "bg-sky-500" : row.rank === 3 ? "bg-violet-500" : "bg-slate-400"}`}>
+                        <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white ${row.rank === 1 ? "bg-emerald-500" : row.rank === 2 ? "bg-sky-500" : row.rank === 3 ? "bg-violet-600" : "bg-slate-400"}`}>
                           {row.name.charAt(0)}
                         </div>
                         <div>

@@ -223,9 +223,14 @@
 
 /* GoalEdge Custom Styles */
 
-/* Football pitch background */
+/* Football pitch background.
+   The colour is declared separately from the image so that a later
+   `background-image` override (see .hero-texture) cannot leave this surface
+   transparent — white hero text on a white section was the single worst
+   light-mode contrast failure in the app. */
 .bg-pitch {
-  background: linear-gradient(135deg, #064e3b 0%, #065f46 25%, #047857 50%, #065f46 75%, #064e3b 100%);
+  background-color: #064e3b;
+  background-image: linear-gradient(135deg, #064e3b 0%, #065f46 25%, #046a4f 50%, #065f46 75%, #064e3b 100%);
   position: relative;
 }
 
@@ -866,11 +871,15 @@ button, input {
 }
 
 /* Hero enhanced texture */
+/* Tints are layered over the pitch gradient rather than replacing it: this
+   rule comes after .bg-pitch in the sheet, so a bare `background-image` here
+   would win the cascade and drop the dark gradient entirely. */
 .hero-texture {
   background-image:
     radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
     radial-gradient(circle at 80% 20%, rgba(20, 184, 166, 0.06) 0%, transparent 40%),
-    radial-gradient(circle at 60% 80%, rgba(6, 182, 212, 0.04) 0%, transparent 40%);
+    radial-gradient(circle at 60% 80%, rgba(6, 182, 212, 0.04) 0%, transparent 40%),
+    linear-gradient(135deg, #064e3b 0%, #065f46 25%, #046a4f 50%, #065f46 75%, #064e3b 100%);
 }
 
 /* Mobile touch target improvement */

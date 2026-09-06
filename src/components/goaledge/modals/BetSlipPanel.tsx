@@ -270,7 +270,7 @@ export function BetSlipPanel({
                             {tip.league} · {tip.prediction}
                           </p>
                           <div className="mt-1 flex items-center gap-2 text-[10px]">
-                            <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-bold text-slate-500 dark:bg-slate-700 dark:text-slate-400">{tip.odds}</span>
+                            <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-400">{tip.odds}</span>
                             {eachWay && <span className="text-amber-600 dark:text-amber-400 font-medium">EW: {boostedOdds.toFixed(2)}</span>}
                             {idx < tipsToShow.length - 1 && accType !== "single" && (
                               <span className="text-emerald-600 dark:text-emerald-400 font-medium">Running: {runningOdds.toFixed(2)}</span>
@@ -413,7 +413,7 @@ export function BetSlipPanel({
                   toast("Bet slip cleared");
                 }}
                 onBlur={() => setTimeout(() => onSetClearConfirming(false), 200)}
-                className={`flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition ${clearConfirming ? "border-red-300 bg-red-50 text-red-600 hover:bg-red-100 dark:border-red-600 dark:bg-red-950/30 dark:text-red-400" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"}`}
+                className={`flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition ${clearConfirming ? "border-red-300 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-600 dark:bg-red-950/30 dark:text-red-400" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"}`}
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 {clearConfirming ? "Tap again to clear" : "Clear"}

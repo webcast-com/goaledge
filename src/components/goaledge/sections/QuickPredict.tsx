@@ -47,7 +47,7 @@ export function QuickPredict({
                   </div>
                 </div>
                 {predictResults[tip.id] && (
-                  <span className={`rounded-lg px-2 py-0.5 text-xs font-bold ${predictResults[tip.id] === "won" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"}`}>
+                  <span className={`rounded-lg px-2 py-0.5 text-xs font-bold ${predictResults[tip.id] === "won" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
                     {predictResults[tip.id] === "won" ? "✓ Correct" : "✗ Wrong"}
                   </span>
                 )}

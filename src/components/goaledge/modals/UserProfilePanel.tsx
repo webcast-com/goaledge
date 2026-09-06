@@ -266,7 +266,7 @@ export function UserProfilePanel({
                 <div className="min-w-0 flex-1">
                   <p className="text-lg font-bold text-slate-900 dark:text-white">{userName}</p>
                   <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{userEmail}</p>
-                  <span className={`mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${isPremium ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}>
+                  <span className={`mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${isPremium ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"}`}>
                     <Crown className="h-3 w-3" /> {isPremium ? "Premium" : "Free"}
                   </span>
                 </div>
@@ -382,7 +382,7 @@ export function UserProfilePanel({
                         <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{betLabel(bet)}</p>
                         <span className={`ml-2 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${
                           bet.status === "won" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" :
-                          bet.status === "lost" ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" :
+                          bet.status === "lost" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
                           bet.status === "pending" ? "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400" :
                           "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                         }`}>
@@ -434,7 +434,7 @@ export function UserProfilePanel({
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-bold text-slate-900 dark:text-white">Ksh {p.amount || "0"}</p>
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${p.status === "completed" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : p.status === "pending" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"}`}>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${p.status === "completed" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : p.status === "pending" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
                             {p.status || "unknown"}
                           </span>
                         </div>

@@ -157,7 +157,7 @@ export function Header({
                   : apiStatus === "seed"
                     ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60"
                     : apiStatus === "offline"
-                      ? "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                      ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
                       : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 animate-pulse"
               }`}
               title={
@@ -374,7 +374,7 @@ export function Header({
                   onClick={() => onSetProfileOpen(!profileOpen)}
                   className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm font-medium transition-all hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-700 text-xs font-bold text-white">
                     {(
                       session.user?.name ||
                       session.user?.email ||
@@ -666,7 +666,7 @@ export function Header({
               {session ? (
                 <>
                   <div className="flex items-center gap-3 rounded-xl bg-white/5 px-4 py-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-700 text-xs font-bold text-white">
                       {(
                         session.user?.name ||
                         session.user?.email ||

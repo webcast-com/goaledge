@@ -108,7 +108,7 @@ export function TipDetailPanel({
               </h2>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-emerald-200">
                 <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{tip.matchTime}</span>
-                <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold">
+                <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-50">
                   {tip.status === "upcoming" ? "Upcoming" : tip.status.charAt(0).toUpperCase() + tip.status.slice(1)}
                 </span>
                 <span className="flex items-center gap-1"><Flame className="h-3.5 w-3.5 text-orange-300" />{tip.tipster}</span>
@@ -203,7 +203,7 @@ export function TipDetailPanel({
                       <input type="number" value={stakeInput} onChange={e => setStakeInput(e.target.value)} className="w-full bg-transparent text-sm font-bold tabular-nums text-slate-900 outline-none dark:text-white" min="0" />
                     </div>
                     {[50, 100, 200, 500].map(a => (
-                      <button key={a} onClick={() => setStakeInput(String(a))} className="rounded-lg bg-slate-100 px-2 py-1.5 text-[10px] font-bold text-slate-500 transition hover:bg-emerald-100 hover:text-emerald-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-emerald-900/40 dark:hover:text-emerald-400">{a}</button>
+                      <button key={a} onClick={() => setStakeInput(String(a))} className="rounded-lg bg-slate-100 px-2 py-1.5 text-[10px] font-bold text-slate-600 transition hover:bg-emerald-100 hover:text-emerald-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-emerald-900/40 dark:hover:text-emerald-400">{a}</button>
                     ))}
                   </div>
                 </div>
@@ -285,7 +285,7 @@ export function TipDetailPanel({
                             <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">{rt.homeTeam} vs {rt.awayTeam}</p>
                             <p className="text-xs text-slate-400">{rt.prediction} · {rt.odds}</p>
                           </div>
-                          <span className={`ml-2 rounded-lg px-2 py-1 text-xs font-bold ${rt.status === "won" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"}`}>
+                          <span className={`ml-2 rounded-lg px-2 py-1 text-xs font-bold ${rt.status === "won" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400"}`}>
                             {rt.status.charAt(0).toUpperCase() + rt.status.slice(1)}
                           </span>
                         </div>

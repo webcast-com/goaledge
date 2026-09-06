@@ -160,7 +160,7 @@ export function TipCard({
                           className={`rounded px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
                             b.isBest
                               ? "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:ring-emerald-800"
-                              : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                              : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                           }`}
                         >
                           {b.odds.toFixed(2)}
@@ -176,7 +176,7 @@ export function TipCard({
                   </>
                 ) : (
                   <>
-                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                       {tip.odds}
                     </span>
                     <button
@@ -220,8 +220,8 @@ export function TipCard({
                   r === "W"
                     ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
                     : r === "L"
-                    ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                    : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                    ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                    : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                 }`}
                 title={r === "W" ? "Win" : r === "L" ? "Loss" : "Draw"}
               >

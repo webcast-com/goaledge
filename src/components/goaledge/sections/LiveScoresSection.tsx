@@ -64,7 +64,7 @@ export function LiveScoresSection({
                     <p className={`text-2xl font-extrabold tabular-nums ${match.homeScore > match.awayScore ? "text-emerald-600 dark:text-emerald-400" : "text-slate-900 dark:text-white"}`}>{match.homeScore}</p>
                   </div>
                   <div className="flex flex-col items-center">
-                    <span className="rounded-full bg-red-100 px-2.5 py-1 text-[10px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                    <span className="rounded-full bg-red-100 px-2.5 py-1 text-[10px] font-bold text-red-700 dark:bg-red-900/30 dark:text-red-400">
                       {match.minute}
                     </span>
                     <span className="mt-1 text-[10px] font-medium text-slate-400">LIVE</span>

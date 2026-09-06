@@ -37,7 +37,7 @@ import type { AdminTab, AdminFormState, Tip } from "@/types/goaledge";
 
 const STATUS_OPTIONS: { value: string; label: string; color: string }[] = [
   { value: "won", label: "Won", color: "text-emerald-600 dark:text-emerald-400" },
-  { value: "lost", label: "Lost", color: "text-red-600 dark:text-red-400" },
+  { value: "lost", label: "Lost", color: "text-red-700 dark:text-red-400" },
   { value: "void", label: "Void", color: "text-amber-600 dark:text-amber-400" },
   { value: "pending", label: "Pending", color: "text-sky-600 dark:text-sky-400" },
   { value: "upcoming", label: "Upcoming", color: "text-violet-600 dark:text-violet-400" },
@@ -259,7 +259,7 @@ export function AdminPanel({
                           </div>
                           <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
                             tip.status === "won" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" :
-                            tip.status === "lost" ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" :
+                            tip.status === "lost" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
                             tip.status === "void" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" :
                             "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400"
                           }`}>{tip.status}</span>
@@ -268,7 +268,7 @@ export function AdminPanel({
                             {/* Edit Button */}
                             <button
                               onClick={() => handleEdit(tip)}
-                              className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:bg-slate-200 hover:text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600"
+                              className="rounded-lg bg-slate-100 p-1.5 text-slate-600 hover:bg-slate-200 hover:text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600"
                               title="Edit tip"
                             >
                               <Pencil className="h-3 w-3" />
@@ -277,7 +277,7 @@ export function AdminPanel({
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <button
-                                  className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:bg-emerald-100 hover:text-emerald-700 dark:bg-slate-700 dark:hover:bg-emerald-900/30 disabled:opacity-50"
+                                  className="rounded-lg bg-slate-100 p-1.5 text-slate-600 hover:bg-emerald-100 hover:text-emerald-700 dark:bg-slate-700 dark:hover:bg-emerald-900/30 disabled:opacity-50"
                                   disabled={resultLoadingId === tip.id}
                                   title="Set result"
                                 >
@@ -303,7 +303,7 @@ export function AdminPanel({
                             {/* Delete Button */}
                             <button
                               onClick={() => setDeleteTarget(tip)}
-                              className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:bg-red-100 hover:text-red-600 dark:bg-slate-700 dark:hover:bg-red-900/30"
+                              className="rounded-lg bg-slate-100 p-1.5 text-slate-600 hover:bg-red-100 hover:text-red-700 dark:bg-slate-700 dark:hover:bg-red-900/30"
                               title="Delete tip"
                             >
                               <Trash2 className="h-3 w-3" />
@@ -336,7 +336,7 @@ export function AdminPanel({
                   </div>
                   <div><label className="block text-xs font-medium text-slate-500 mb-1">Analysis</label><textarea value={form.analysis} onChange={e => onSetForm({ ...form, analysis: e.target.value })} rows={3} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" /></div>
                   <div className="flex items-center gap-3">
-                    <button type="button" onClick={() => onSetForm({ ...form, isPremium: !form.isPremium })} className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold ${form.isPremium ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}>
+                    <button type="button" onClick={() => onSetForm({ ...form, isPremium: !form.isPremium })} className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold ${form.isPremium ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"}`}>
                       <Crown className="h-3.5 w-3.5" /> Premium
                     </button>
                   </div>

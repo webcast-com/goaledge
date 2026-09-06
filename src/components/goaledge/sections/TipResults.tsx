@@ -186,7 +186,7 @@ export function TipResults({
                 <button key={f} onClick={() => onSetHistoryFilter(f)} className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold capitalize transition-all ${historyFilter === f ? "bg-emerald-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700"}`}>
                   {f}
                   {f !== "all" && (
-                    <span className="ml-1 opacity-70">({loading ? "…" : f === "void" ? stats.voided : stats[f]})</span>
+                    <span className="ml-1 opacity-85">({loading ? "…" : f === "void" ? stats.voided : stats[f]})</span>
                   )}
                 </button>
               ))}
@@ -218,13 +218,13 @@ export function TipResults({
             </div>
             <div className="rounded-xl border border-slate-200 bg-white p-3 text-center dark:border-slate-700 dark:bg-slate-800/60">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Net P&L</p>
-              <p className={`mt-1 text-base font-extrabold ${netPL >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+              <p className={`mt-1 text-base font-extrabold ${netPL >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}>
                 {loading ? "—" : `${netPL >= 0 ? "+" : ""}Ksh ${netPL.toLocaleString()}`}
               </p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white p-3 text-center dark:border-slate-700 dark:bg-slate-800/60">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">ROI</p>
-              <p className={`mt-1 text-base font-extrabold ${roi >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+              <p className={`mt-1 text-base font-extrabold ${roi >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}>
                 {loading ? "—" : `${roi >= 0 ? "+" : ""}${roi.toFixed(1)}%`}
               </p>
             </div>
@@ -288,7 +288,7 @@ export function TipResults({
                 <div key={r.id} className="group flex items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 transition-all hover:border-slate-300 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600 cursor-pointer" title={r.analysis || ""}>
                   <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${
                     r.status === "won" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" :
-                    r.status === "lost" ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" :
+                    r.status === "lost" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
                     "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                   }`}>
                     {r.status === "won" ? <CheckCircle2 className="h-4 w-4" /> : r.status === "lost" ? <X className="h-4 w-4" /> : <RefreshCw className="h-3.5 w-3.5" />}

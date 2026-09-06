@@ -40,7 +40,7 @@ export function Hero({
 
         <div className="relative mx-auto max-w-4xl text-center" style={{ transform: `translateY(${heroScrollY * 0.15}px)`, opacity: Math.max(0, 1 - heroScrollY / 600) }}>
           <FadeIn delay={0.1}>
-            <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/25 px-4 py-2 text-sm font-bold text-white backdrop-blur-sm ring-1 ring-emerald-400/40 shadow-lg shadow-emerald-500/10">
+            <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-4 py-2 text-sm font-bold text-white backdrop-blur-sm ring-1 ring-emerald-400/40 shadow-lg shadow-emerald-500/10">
               <span className="relative flex h-2.5 w-2.5">
                 <span className="live-pulse absolute inline-flex h-full w-full rounded-full bg-emerald-300" />
                 <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-300" />
@@ -85,14 +85,14 @@ export function Hero({
                 { icon: <Target className="h-5 w-5 text-emerald-300" />, end: 5, suffix: "+", label: "Tips posted" },
                 { icon: <Earth className="h-5 w-5 text-emerald-300" />, end: 10, suffix: "+", label: "Leagues" },
               ].map((stat) => (
-                <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-5 text-white backdrop-blur-md transition-all hover:border-emerald-400/30 hover:bg-white/10 hover:shadow-lg hover:shadow-emerald-500/10">
-                  <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
+                <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-5 text-white backdrop-blur-md transition-all hover:border-emerald-400/30 hover:bg-white/[0.08] hover:shadow-lg hover:shadow-emerald-500/10">
+                  <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.06]">
                     {stat.icon}
                   </div>
                   <p className="mt-2 text-2xl font-bold tabular-nums">
                     <CountUp end={stat.end} suffix={stat.suffix} />
                   </p>
-                  <p className="text-xs text-slate-400">{stat.label}</p>
+                  <p className="text-xs text-white/85">{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -110,7 +110,7 @@ export function Hero({
                     <span className="h-3 w-3 rounded-full bg-emerald-400/80" />
                   </div>
                   <div className="flex-1 text-center">
-                    <span className="rounded-md bg-white/10 px-3 py-1 text-[11px] text-white/70">goaledge.com/dashboard</span>
+                    <span className="rounded-md bg-white/[0.06] px-3 py-1 text-[11px] text-white/90">goaledge.com/dashboard</span>
                   </div>
                 </div>
                 {/* Mock dashboard content */}
@@ -120,7 +120,7 @@ export function Hero({
                     <div className="mb-3 h-4 w-20 rounded bg-white/10" />
                     <div className="space-y-2">
                       {["Tips", "Live Scores", "History", "Profile"].map((item, i) => (
-                        <div key={item} className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs ${i === 0 ? "bg-emerald-500/20 text-emerald-300" : "text-white/60"}`}>
+                        <div key={item} className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs ${i === 0 ? "bg-emerald-500/20 text-emerald-300" : "text-white/90"}`}>
                           <div className="h-3.5 w-3.5 rounded bg-current/30" />
                           {item}
                         </div>
@@ -149,7 +149,7 @@ export function Hero({
                         <div key={t.team} className="rounded-lg bg-white/[0.04] p-2.5">
                           <div className="h-2.5 w-24 rounded bg-white/15" />
                           <div className="mt-2 flex items-center justify-between">
-                            <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-bold text-emerald-300">{t.odds}</span>
+                            <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-bold text-emerald-200">{t.odds}</span>
                             <div className="h-1.5 w-12 overflow-hidden rounded-full bg-white/10">
                               <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500" style={{ width: `${t.conf}%` }} />
                             </div>

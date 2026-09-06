@@ -211,7 +211,7 @@ export function PlaceBetModal({
             {step === "error" && (
               <div className="p-6 text-center">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-                  <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
+                  <AlertTriangle className="h-8 w-8 text-red-700 dark:text-red-400" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">Bet Failed</h3>
                 <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{placeBetError || "Something went wrong. Please try again."}</p>
@@ -269,8 +269,8 @@ export function PlaceBetModal({
                   <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">Ksh {myBetsSummary.totalReturned.toLocaleString()}</p>
                 </div>
                 <div className={`rounded-xl p-2.5 text-center ${myBetsSummary.profit >= 0 ? "bg-emerald-50 dark:bg-emerald-950/20" : "bg-red-50 dark:bg-red-950/20"}`}>
-                  <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400">P/L</p>
-                  <p className={`text-base font-extrabold ${myBetsSummary.profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                  <p className="text-[10px] font-medium text-slate-600 dark:text-slate-400">P/L</p>
+                  <p className={`text-base font-extrabold ${myBetsSummary.profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}>
                     {myBetsSummary.profit >= 0 ? "+" : ""}Ksh {myBetsSummary.profit.toLocaleString()}
                   </p>
                 </div>
@@ -316,7 +316,7 @@ export function PlaceBetModal({
                         <div className="flex items-center gap-2">
                           <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                             bet.status === "won" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" :
-                            bet.status === "lost" ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" :
+                            bet.status === "lost" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
                             bet.status === "void" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" :
                             "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400"
                           }`}>{bet.status.toUpperCase()}</span>
@@ -331,9 +331,9 @@ export function PlaceBetModal({
                             {bet.result && (
                               <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${
                                 bet.result[i]?.result === "won" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" :
-                                bet.result[i]?.result === "lost" ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" :
+                                bet.result[i]?.result === "lost" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
                                 bet.result[i]?.result === "void" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" :
-                                "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+                                "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400"
                               }`}>
                                 {bet.result[i]?.result === "won" ? "W" : bet.result[i]?.result === "lost" ? "L" : bet.result[i]?.result === "void" ? "V" : "P"}
                               </span>
@@ -367,7 +367,7 @@ export function PlaceBetModal({
               <div className="border-t border-slate-200 p-4 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Return on Investment</span>
-                  <span className={`text-sm font-bold ${parseFloat(myBetsSummary.roi) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                  <span className={`text-sm font-bold ${parseFloat(myBetsSummary.roi) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}>
                     {parseFloat(myBetsSummary.roi) >= 0 ? "+" : ""}{myBetsSummary.roi}%
                   </span>
                 </div>
