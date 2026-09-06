@@ -61,7 +61,7 @@ export function Hero({
           </FadeIn>
 
           <FadeIn delay={0.35}>
-            <p className="mx-auto mt-3 max-w-lg text-base leading-relaxed text-slate-300/90 sm:text-lg">
+            <p className="mx-auto mt-3 max-w-lg text-base leading-relaxed text-slate-100 sm:text-lg">
               Expert predictions, real-time odds &amp; deep analysis — one beautifully simple dashboard.
             </p>
           </FadeIn>
@@ -81,9 +81,9 @@ export function Hero({
           <FadeIn delay={0.65}>
             <div className="mx-auto mt-14 grid max-w-2xl grid-cols-3 gap-3 sm:gap-4">
               {[
-                { icon: <Trophy className="h-5 w-5 text-emerald-400" />, end: 16, suffix: "%", label: "Win rate" },
-                { icon: <Target className="h-5 w-5 text-emerald-400" />, end: 5, suffix: "+", label: "Tips posted" },
-                { icon: <Earth className="h-5 w-5 text-emerald-400" />, end: 10, suffix: "+", label: "Leagues" },
+                { icon: <Trophy className="h-5 w-5 text-emerald-300" />, end: 16, suffix: "%", label: "Win rate" },
+                { icon: <Target className="h-5 w-5 text-emerald-300" />, end: 5, suffix: "+", label: "Tips posted" },
+                { icon: <Earth className="h-5 w-5 text-emerald-300" />, end: 10, suffix: "+", label: "Leagues" },
               ].map((stat) => (
                 <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-5 text-white backdrop-blur-md transition-all hover:border-emerald-400/30 hover:bg-white/10 hover:shadow-lg hover:shadow-emerald-500/10">
                   <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
@@ -110,7 +110,7 @@ export function Hero({
                     <span className="h-3 w-3 rounded-full bg-emerald-400/80" />
                   </div>
                   <div className="flex-1 text-center">
-                    <span className="rounded-md bg-white/10 px-3 py-1 text-[11px] text-white/50">goaledge.com/dashboard</span>
+                    <span className="rounded-md bg-white/10 px-3 py-1 text-[11px] text-white/70">goaledge.com/dashboard</span>
                   </div>
                 </div>
                 {/* Mock dashboard content */}
@@ -120,7 +120,7 @@ export function Hero({
                     <div className="mb-3 h-4 w-20 rounded bg-white/10" />
                     <div className="space-y-2">
                       {["Tips", "Live Scores", "History", "Profile"].map((item, i) => (
-                        <div key={item} className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs ${i === 0 ? "bg-emerald-500/20 text-emerald-300" : "text-white/40"}`}>
+                        <div key={item} className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs ${i === 0 ? "bg-emerald-500/20 text-emerald-300" : "text-white/60"}`}>
                           <div className="h-3.5 w-3.5 rounded bg-current/30" />
                           {item}
                         </div>
@@ -160,7 +160,7 @@ export function Hero({
                   </div>
                 </div>
               </div>
-              <p className="mt-3 text-center text-xs text-emerald-300/60">
+              <p className="mt-3 text-center text-xs text-emerald-100">
                 Preview of the GoalEdge dashboard — available after sign up
               </p>
             </div>

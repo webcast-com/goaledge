@@ -89,7 +89,7 @@ export function ShareModal({ open, tip, onClose }: ShareModalProps) {
               }}
               className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-medium text-slate-700 transition hover:border-green-300 hover:bg-green-50 hover:text-green-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-green-600"
             >
-              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-green-500 text-[9px] font-bold text-white">W</span>
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-green-700 text-[9px] font-bold text-white">W</span>
               WhatsApp
             </button>
             <button
@@ -269,7 +269,7 @@ export function ShareModal({ open, tip, onClose }: ShareModalProps) {
             <div className="flex-1 flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
               <div className="flex flex-col items-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-700">
-                  <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400">QR Code</span>
+                  <span className="text-[9px] font-bold text-slate-600 dark:text-slate-400">QR Code</span>
                 </div>
                 <p className="mt-1 text-[9px] text-slate-400">Scan to share</p>
               </div>

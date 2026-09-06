@@ -89,7 +89,7 @@ export function QuickPredict({
               const correct = Object.values(results).filter(r => r === "won").length;
               toast.success(`🎯 ${correct}/3 correct! ${correct === 3 ? "Perfect score! 🏆" : correct >= 2 ? "Great predictions!" : "Better luck tomorrow!"}`);
             }}
-            className="rounded-xl bg-gradient-to-b from-purple-500 to-purple-600 px-8 py-3 text-sm font-bold text-white shadow-sm shadow-purple-600/20 transition-all hover:from-purple-500 hover:to-purple-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="rounded-xl bg-gradient-to-b from-purple-600 to-purple-700 px-8 py-3 text-sm font-bold text-white shadow-sm shadow-purple-600/20 transition-all hover:from-purple-600 hover:to-purple-800 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Submit Predictions ({Object.keys(quickPredictions).length}/3)
           </button>

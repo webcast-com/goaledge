@@ -209,7 +209,7 @@ export function BetSlipPanel({
           <div className="mx-4 mt-3">
             <button
               onClick={() => { onSetOddsBoostApplied(true); toast.success("Odds boost applied! +10% on all selections"); }}
-              className="flex w-full items-center justify-between rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-white transition-all hover:from-amber-500 hover:to-orange-600 hover:shadow-md active:scale-[0.98]"
+              className="flex w-full items-center justify-between rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 px-4 py-2.5 text-white transition-all hover:from-amber-600 hover:to-orange-700 hover:shadow-md active:scale-[0.98]"
             >
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4" />

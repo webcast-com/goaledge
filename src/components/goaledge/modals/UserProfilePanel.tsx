@@ -584,7 +584,7 @@ export function UserProfilePanel({
 
               <button
                 onClick={() => toast.success("Data cleared!")}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-100 dark:border-red-800/50 dark:bg-red-950/20 dark:text-red-400"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-100 dark:border-red-800/50 dark:bg-red-950/20 dark:text-red-400"
               >
                 <Trash2 className="h-4 w-4" /> Clear all data
               </button>

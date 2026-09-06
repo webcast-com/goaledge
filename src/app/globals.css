@@ -112,6 +112,106 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   LIGHT-MODE CONTRAST — WCAG 2.1 AA
+   ───────────────────────────────────────────────────────────────────────
+   Tailwind's palette steps are tuned to read on a dark canvas. On this
+   app's white / slate-50 light theme the stock steps fall well short of
+   AA, which is why light mode read as washed out:
+
+       text-slate-400   182 uses   2.6:1   body copy, labels, meta
+       text-emerald-600  73 uses   3.7:1   accents, links, values
+       text-slate-300    11 uses   1.5:1   "vs" separators, minute marks
+       text-amber-600    11 uses   3.0:1   badges on amber-50
+       white on emerald-500 buttons       2.5:1
+       white on amber-500 badges          2.1:1
+
+   Every Tailwind utility resolves through the --color-* variables, so the
+   steps used by light-mode surfaces are re-declared here — one notch
+   deeper for the greys, two for the saturated hues (they start out too
+   light for white labels to read on them). Text, backgrounds, borders,
+   rings, gradients and every hover:/focus: variant move together, so the
+   relative steps between states are preserved.
+
+   `.dark` restores the stock palette — dark mode renders exactly as
+   before. `.on-dark` / `.bg-pitch` do the same for the surfaces that stay
+   dark in light mode (hero pitch, header mobile menu, shared slip page).
+   ═══════════════════════════════════════════════════════════════════════ */
+:root {
+  /* greys: muted copy 2.6 → 4.8:1 (AA), card/input edges 1.2 → 1.5:1 */
+  --color-slate-200: #cad5e2;
+  --color-slate-300: #90a1b9;
+  --color-slate-400: #62748e;
+
+  /* brand green: white labels 2.5 → 5.4:1, accent text 3.7 → 7.6:1 */
+  --color-emerald-400: #009767;
+  --color-emerald-500: #007956;
+  --color-emerald-600: #005f46;
+  --color-teal-400: #009588;
+  --color-teal-500: #00776e;
+  --color-teal-600: #005f5a;
+
+  /* warm accents: amber/orange need two notches before white reads on
+     them (2.1 → 5.0:1); amber text on white 3.0 → 7.1:1 */
+  --color-amber-400: #dd7400;
+  --color-amber-500: #b75000;
+  --color-amber-600: #973c00;
+  --color-orange-500: #ca3500;
+  --color-orange-600: #9f2d00;
+
+  /* cool accents: sky text 2.7 → 5.9:1, red text 3.8 → 6.4:1 */
+  --color-sky-400: #0084cc;
+  --color-sky-500: #0069a4;
+  --color-red-400: #e40014;
+  --color-red-500: #bf000f;
+
+  /* shadcn neutrals — card/input edges and muted copy were 1.2–1.5:1,
+     focus rings 2.4:1 (WCAG 1.4.11 wants 3:1) */
+  --border: oklch(0.87 0 0);
+  --input: oklch(0.78 0 0);
+  --ring: oklch(0.6 0 0);
+  --muted-foreground: oklch(0.52 0 0);
+
+  /* Body-copy lift for the palest grey step ("vs", minute marks, dashes).
+     Indirection variable so .dark / .on-dark can hand the original back. */
+  --text-slate-300-aa: var(--color-slate-500);
+}
+
+/* Stock palette — dark mode, plus surfaces that stay dark in light mode. */
+.dark,
+.on-dark,
+.bg-pitch {
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cad5e2;
+  --color-slate-400: #90a1b9;
+  --color-emerald-400: #00d294;
+  --color-emerald-500: #00bb7f;
+  --color-emerald-600: #009767;
+  --color-teal-400: #00d3bd;
+  --color-teal-500: #00baa7;
+  --color-teal-600: #009588;
+  --color-amber-400: #fcbb00;
+  --color-amber-500: #f99c00;
+  --color-amber-600: #dd7400;
+  --color-orange-500: #fe6e00;
+  --color-orange-600: #f05100;
+  --color-sky-400: #00bcfe;
+  --color-sky-500: #00a5ef;
+  --color-red-400: #ff6568;
+  --color-red-500: #fb2c36;
+  --text-slate-300-aa: var(--color-slate-300);
+}
+
+@layer utilities {
+  /* The palest grey step is used for meaningful separators ("vs", 0'/HT/90'
+     minute marks, em-dash placeholders), so it gets the muted-copy grey in
+     light mode. Zero-specificity scoping keeps hover:/focus:/dark: variants
+     in charge of their own colours. */
+  :where(html:not(.dark)) .text-slate-300 {
+    color: var(--text-slate-300-aa);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -327,7 +427,7 @@ html {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #10b981, transparent);
+  background: linear-gradient(90deg, transparent, var(--color-emerald-500), transparent);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -378,7 +478,7 @@ html {
 
 /* Enhanced focus styles */
 button:focus-visible {
-  outline: 2px solid #10b981;
+  outline: 2px solid var(--color-emerald-500);
   outline-offset: 2px;
 }
 
@@ -562,7 +662,7 @@ button, input {
   transform: translateX(-50%);
   width: 2px;
   height: 8px;
-  background: linear-gradient(to bottom, #10b981, transparent);
+  background: linear-gradient(to bottom, var(--color-emerald-500), transparent);
 }
 
 /* Stats card subtle gradient background */
@@ -601,7 +701,7 @@ button, input {
   inset: -1px;
   border-radius: 1rem;
   padding: 1px;
-  background: linear-gradient(135deg, #10b981, #14b8a6, #06b6d4, #10b981);
+  background: linear-gradient(135deg, var(--color-emerald-500), var(--color-teal-500), #06b6d4, var(--color-emerald-500));
   background-size: 300% 300%;
   animation: border-rotate 4s linear infinite;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -671,7 +771,7 @@ button, input {
 .match-progress-fill {
   height: 100%;
   border-radius: 2px;
-  background: linear-gradient(90deg, #10b981, #14b8a6);
+  background: linear-gradient(90deg, var(--color-emerald-500), var(--color-teal-500));
   transition: width 0.5s ease;
 }
 
@@ -740,7 +840,7 @@ button, input {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #ef4444, transparent);
+  background: linear-gradient(90deg, transparent, var(--color-red-500), transparent);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -756,12 +856,12 @@ button, input {
 }
 
 .odds-value.up {
-  color: #10b981;
+  color: var(--color-emerald-500);
   transform: scale(1.1);
 }
 
 .odds-value.down {
-  color: #ef4444;
+  color: var(--color-red-500);
   transform: scale(1.1);
 }
 
@@ -866,7 +966,7 @@ button, input {
 }
 
 .odds-boost-badge {
-  background: linear-gradient(90deg, #f59e0b, #f97316, #f59e0b);
+  background: linear-gradient(90deg, var(--color-amber-500), var(--color-orange-500), var(--color-amber-500));
   background-size: 200% 100%;
   animation: boost-shimmer 2s linear infinite;
 }
@@ -913,7 +1013,7 @@ header[data-scrolled="true"] {
 }
 
 .skeleton-shimmer {
-  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background: linear-gradient(90deg, var(--color-slate-200) 25%, var(--color-slate-100) 50%, var(--color-slate-200) 75%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }

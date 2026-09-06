@@ -26,7 +26,7 @@ export function LiveScoresSection({
             <span className="odds-live-dot ml-2 flex h-2 w-2 items-center justify-center rounded-full bg-emerald-500 text-emerald-500">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
             </span>
-            <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
+            <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:bg-red-900/30 dark:text-red-400">
               {liveScores.length} LIVE
             </span>
             {lastRefreshed && (

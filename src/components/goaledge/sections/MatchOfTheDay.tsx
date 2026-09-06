@@ -62,7 +62,7 @@ export function MatchOfTheDay({
                   </div>
                   <div className="flex flex-col items-center gap-2 px-6">
                     <div className="rounded-xl bg-slate-100 px-4 py-2 dark:bg-slate-800">
-                      <p className="text-xs font-medium text-slate-400">vs</p>
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400">vs</p>
                     </div>
                     <MatchCountdown matchTime="19 Jul, 21:45" />
                   </div>

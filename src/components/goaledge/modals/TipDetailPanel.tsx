@@ -432,7 +432,7 @@ export function TipDetailPanel({
                         </div>
                         <p className="mt-4 text-sm font-bold text-slate-700 dark:text-slate-200">Premium Content</p>
                         <p className="mt-1 max-w-xs text-xs text-slate-400">Unlock in-depth analysis, xG breakdowns, and expert reasoning for this prediction.</p>
-                        <button onClick={onUpgrade} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-amber-400 to-amber-500 px-6 py-2.5 text-sm font-bold text-white shadow-sm shadow-amber-500/20 transition hover:from-amber-500 hover:to-amber-600">
+                        <button onClick={onUpgrade} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-amber-500 to-amber-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm shadow-amber-500/20 transition hover:from-amber-600 hover:to-amber-700">
                           <Crown className="h-4 w-4" /> Unlock for Ksh 100
                         </button>
                       </div>
@@ -481,7 +481,7 @@ export function TipDetailPanel({
                       <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">{tip.homeTeam}</p>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {["M. Salah — Doubtful (hamstring)", "V. van Dijk — Out (ankle)"].map(n => (
-                          <span key={n} className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1 text-[10px] font-medium text-red-600 dark:bg-red-950/30 dark:text-red-400">
+                          <span key={n} className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1 text-[10px] font-medium text-red-700 dark:bg-red-950/30 dark:text-red-400">
                             <span className="h-1.5 w-1.5 rounded-full bg-red-500" />{n}
                           </span>
                         ))}
@@ -586,7 +586,7 @@ export function TipDetailPanel({
         {/* Sticky Bottom Bar */}
         <div className="sticky bottom-0 z-10 border-t border-slate-200 bg-white/95 backdrop-blur-xl px-4 py-3 dark:border-slate-700 dark:bg-slate-900/95 sm:px-6">
           {locked ? (
-            <button onClick={onUpgrade} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-amber-400 to-amber-500 px-4 py-3.5 text-sm font-bold text-white shadow-sm shadow-amber-500/20 transition hover:from-amber-500 hover:to-amber-600">
+            <button onClick={onUpgrade} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-amber-500 to-amber-600 px-4 py-3.5 text-sm font-bold text-white shadow-sm shadow-amber-500/20 transition hover:from-amber-600 hover:to-amber-700">
               <Crown className="h-4 w-4" />
               Unlock Premium — Ksh 100/day
             </button>
@@ -602,7 +602,7 @@ export function TipDetailPanel({
                 onClick={onAddToSlip}
                 className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-bold transition ${
                   inSlip
-                    ? "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                    ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                     : "bg-gradient-to-b from-emerald-500 to-emerald-600 text-white shadow-sm shadow-emerald-600/20 hover:from-emerald-500 hover:to-emerald-700"
                 }`}
               >

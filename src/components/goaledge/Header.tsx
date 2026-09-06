@@ -143,7 +143,10 @@ export function Header({
                   : "text-white"
               }`}
             >
-              Goal<span className="text-emerald-400">Edge</span>
+              Goal
+              <span className={scrolled ? "text-emerald-600 dark:text-emerald-400" : "text-emerald-400"}>
+                Edge
+              </span>
             </span>
             {/* API Status Indicator — clickable to open settings */}
             <button
@@ -264,7 +267,7 @@ export function Header({
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">
                       Notifications
                     </h4>
-                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:bg-red-900/30 dark:text-red-400">
                       {notifications.length} new
                     </span>
                   </div>
@@ -358,7 +361,13 @@ export function Header({
               )}
             </div>
 
-            <ThemeToggle />
+            <ThemeToggle
+              className={
+                scrolled
+                  ? "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  : undefined
+              }
+            />
             {session ? (
               <div className="relative" ref={profileRef}>
                 <button
@@ -439,7 +448,7 @@ export function Header({
                         Dashboard
                       </button>
                       <button
-                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20"
+                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-red-700 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20"
                         onClick={() => {
                           onSetProfileOpen(false);
                           onSignOut();
@@ -498,7 +507,11 @@ export function Header({
           <div className="flex items-center gap-2 sm:hidden">
             <button
               onClick={() => onSetNotificationsOpen(!notificationsOpen)}
-              className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/5 text-white/80 hover:bg-white/10"
+              className={`relative flex h-9 w-9 items-center justify-center rounded-lg border transition ${
+                scrolled
+                  ? "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  : "border-white/20 bg-white/5 text-white/80 hover:bg-white/10"
+              }`}
               aria-label="Notifications"
             >
               <Bell className="h-4 w-4" />
@@ -510,7 +523,11 @@ export function Header({
             </button>
             <button
               onClick={() => onSetBetSlipOpen(true)}
-              className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/5 text-white/80 hover:bg-white/10"
+              className={`relative flex h-9 w-9 items-center justify-center rounded-lg border transition ${
+                scrolled
+                  ? "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  : "border-white/20 bg-white/5 text-white/80 hover:bg-white/10"
+              }`}
               aria-label="Open bet slip"
             >
               <Ticket className="h-4 w-4" />
@@ -522,7 +539,11 @@ export function Header({
             </button>
             <button
               onClick={() => onSetMobileMenuOpen(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/5 text-white/80 hover:bg-white/10"
+              className={`flex h-9 w-9 items-center justify-center rounded-lg border transition ${
+                scrolled
+                  ? "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  : "border-white/20 bg-white/5 text-white/80 hover:bg-white/10"
+              }`}
               aria-label="Open menu"
             >
               <Menu className="h-4 w-4" />
@@ -606,7 +627,7 @@ export function Header({
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => onSetMobileMenuOpen(false)}
           />
-          <div className="absolute right-0 top-0 h-full w-72 bg-slate-900 p-6 shadow-2xl dark:bg-slate-900">
+          <div className="on-dark absolute right-0 top-0 h-full w-72 bg-slate-900 p-6 shadow-2xl dark:bg-slate-900">
             <div className="flex items-center justify-between">
               <span className="text-lg font-bold text-white">
                 Goal<span className="text-emerald-400">Edge</span>
@@ -699,7 +720,7 @@ export function Header({
                 </>
               )}
             </div>
-            <div className="mt-8 flex items-center gap-2 text-xs text-white/40">
+            <div className="mt-8 flex items-center gap-2 text-xs text-white/60">
               <ThemeToggle />
               <span>Toggle theme</span>
             </div>

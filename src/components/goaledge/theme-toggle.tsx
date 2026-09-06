@@ -3,13 +3,15 @@
 import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
 
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
 
   return (
     <button
-      className="relative flex h-9 w-9 items-center justify-center rounded-lg border transition border-white/20 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
+      className={`relative flex h-9 w-9 items-center justify-center rounded-lg border transition ${
+        className ?? "border-white/20 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
+      }`}
       aria-label="Toggle theme"
       onClick={() => setTheme(isDark ? "light" : "dark")}
       suppressHydrationWarning
