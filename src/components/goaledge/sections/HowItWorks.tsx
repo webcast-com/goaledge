@@ -76,6 +76,7 @@ export function HowItWorks() {
           ))}
         </StaggerContainer>
       </div>
+      {/* contrast-audit-ignore: decorative section-divider wave (SVG fill, not text) */}
       <div className="absolute bottom-0 left-0 right-0 overflow-hidden leading-none -mb-px">
         <svg viewBox="0 0 1200 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-8 text-white dark:text-slate-900/60" preserveAspectRatio="none">
           <path d="M0 40V20C200 0 400 40 600 20C800 0 1000 40 1200 20V40H0Z" fill="currentColor"/>

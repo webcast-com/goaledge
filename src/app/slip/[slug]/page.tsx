@@ -71,12 +71,12 @@ export default async function SlipPage({
     .join("\n") + (slip.stake ? `\nStake: Ksh ${slip.stake.toLocaleString()}` : "");
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-emerald-950 px-4 py-10 text-white">
+    <main className="on-dark min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-emerald-950 px-4 py-10 text-white">
       <div className="mx-auto max-w-md">
         {/* Brand */}
         <div className="mb-6 text-center">
           <Link href="/" className="inline-flex items-center gap-2 text-xl font-extrabold tracking-tight">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-sm">⚽</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-700 to-teal-700 text-sm">⚽</span>
             Goal<span className="text-emerald-400">Edge</span>
           </Link>
           <p className="mt-1 text-xs text-slate-400">Shared bet slip</p>
@@ -84,7 +84,7 @@ export default async function SlipPage({
 
         {/* Slip card */}
         <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/80 shadow-2xl shadow-black/40 backdrop-blur">
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-5 py-4">
+          <div className="bg-gradient-to-r from-emerald-700 to-teal-700 px-5 py-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-100">Accumulator</p>
@@ -107,7 +107,7 @@ export default async function SlipPage({
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold">
-                      {leg.homeTeam} <span className="mx-1 text-xs font-medium text-slate-500">vs</span> {leg.awayTeam}
+                      {leg.homeTeam} <span className="mx-1 text-xs font-medium text-slate-400">vs</span> {leg.awayTeam}
                     </p>
                     <p className="mt-0.5 text-[11px] text-slate-400">{leg.league} · {leg.matchTime}</p>
                   </div>
@@ -135,11 +135,11 @@ export default async function SlipPage({
         <div className="mt-6 space-y-2 text-center">
           <Link
             href="/"
-            className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-3 text-sm font-bold text-white transition hover:from-emerald-400 hover:to-teal-500"
+            className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-emerald-700 to-teal-700 px-4 py-3 text-sm font-bold text-white transition hover:from-emerald-600 hover:to-teal-600"
           >
             Get today&apos;s tips on GoalEdge
           </Link>
-          <p className="text-[10px] text-slate-500">
+          <p className="text-[10px] text-slate-400">
             18+ only · Play responsibly. Odds are indicative and may change.
           </p>
         </div>

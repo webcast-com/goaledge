@@ -108,7 +108,7 @@ export function TipDetailPanel({
               </h2>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-emerald-200">
                 <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{tip.matchTime}</span>
-                <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold">
+                <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-50">
                   {tip.status === "upcoming" ? "Upcoming" : tip.status.charAt(0).toUpperCase() + tip.status.slice(1)}
                 </span>
                 <span className="flex items-center gap-1"><Flame className="h-3.5 w-3.5 text-orange-300" />{tip.tipster}</span>
@@ -203,7 +203,7 @@ export function TipDetailPanel({
                       <input type="number" value={stakeInput} onChange={e => setStakeInput(e.target.value)} className="w-full bg-transparent text-sm font-bold tabular-nums text-slate-900 outline-none dark:text-white" min="0" />
                     </div>
                     {[50, 100, 200, 500].map(a => (
-                      <button key={a} onClick={() => setStakeInput(String(a))} className="rounded-lg bg-slate-100 px-2 py-1.5 text-[10px] font-bold text-slate-500 transition hover:bg-emerald-100 hover:text-emerald-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-emerald-900/40 dark:hover:text-emerald-400">{a}</button>
+                      <button key={a} onClick={() => setStakeInput(String(a))} className="rounded-lg bg-slate-100 px-2 py-1.5 text-[10px] font-bold text-slate-600 transition hover:bg-emerald-100 hover:text-emerald-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-emerald-900/40 dark:hover:text-emerald-400">{a}</button>
                     ))}
                   </div>
                 </div>
@@ -285,7 +285,7 @@ export function TipDetailPanel({
                             <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">{rt.homeTeam} vs {rt.awayTeam}</p>
                             <p className="text-xs text-slate-400">{rt.prediction} · {rt.odds}</p>
                           </div>
-                          <span className={`ml-2 rounded-lg px-2 py-1 text-xs font-bold ${rt.status === "won" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"}`}>
+                          <span className={`ml-2 rounded-lg px-2 py-1 text-xs font-bold ${rt.status === "won" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400"}`}>
                             {rt.status.charAt(0).toUpperCase() + rt.status.slice(1)}
                           </span>
                         </div>
@@ -432,7 +432,7 @@ export function TipDetailPanel({
                         </div>
                         <p className="mt-4 text-sm font-bold text-slate-700 dark:text-slate-200">Premium Content</p>
                         <p className="mt-1 max-w-xs text-xs text-slate-400">Unlock in-depth analysis, xG breakdowns, and expert reasoning for this prediction.</p>
-                        <button onClick={onUpgrade} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-amber-400 to-amber-500 px-6 py-2.5 text-sm font-bold text-white shadow-sm shadow-amber-500/20 transition hover:from-amber-500 hover:to-amber-600">
+                        <button onClick={onUpgrade} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-amber-500 to-amber-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm shadow-amber-500/20 transition hover:from-amber-600 hover:to-amber-700">
                           <Crown className="h-4 w-4" /> Unlock for Ksh 100
                         </button>
                       </div>
@@ -481,7 +481,7 @@ export function TipDetailPanel({
                       <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">{tip.homeTeam}</p>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {["M. Salah — Doubtful (hamstring)", "V. van Dijk — Out (ankle)"].map(n => (
-                          <span key={n} className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1 text-[10px] font-medium text-red-600 dark:bg-red-950/30 dark:text-red-400">
+                          <span key={n} className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1 text-[10px] font-medium text-red-700 dark:bg-red-950/30 dark:text-red-400">
                             <span className="h-1.5 w-1.5 rounded-full bg-red-500" />{n}
                           </span>
                         ))}
@@ -586,7 +586,7 @@ export function TipDetailPanel({
         {/* Sticky Bottom Bar */}
         <div className="sticky bottom-0 z-10 border-t border-slate-200 bg-white/95 backdrop-blur-xl px-4 py-3 dark:border-slate-700 dark:bg-slate-900/95 sm:px-6">
           {locked ? (
-            <button onClick={onUpgrade} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-amber-400 to-amber-500 px-4 py-3.5 text-sm font-bold text-white shadow-sm shadow-amber-500/20 transition hover:from-amber-500 hover:to-amber-600">
+            <button onClick={onUpgrade} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-amber-500 to-amber-600 px-4 py-3.5 text-sm font-bold text-white shadow-sm shadow-amber-500/20 transition hover:from-amber-600 hover:to-amber-700">
               <Crown className="h-4 w-4" />
               Unlock Premium — Ksh 100/day
             </button>
@@ -602,7 +602,7 @@ export function TipDetailPanel({
                 onClick={onAddToSlip}
                 className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-bold transition ${
                   inSlip
-                    ? "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                    ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                     : "bg-gradient-to-b from-emerald-500 to-emerald-600 text-white shadow-sm shadow-emerald-600/20 hover:from-emerald-500 hover:to-emerald-700"
                 }`}
               >

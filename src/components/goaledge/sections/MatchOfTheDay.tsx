@@ -62,7 +62,7 @@ export function MatchOfTheDay({
                   </div>
                   <div className="flex flex-col items-center gap-2 px-6">
                     <div className="rounded-xl bg-slate-100 px-4 py-2 dark:bg-slate-800">
-                      <p className="text-xs font-medium text-slate-400">vs</p>
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400">vs</p>
                     </div>
                     <MatchCountdown matchTime="19 Jul, 21:45" />
                   </div>
@@ -105,7 +105,7 @@ export function MatchOfTheDay({
                   </div>
                   <div className="text-right">
                     <div className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400">
-                      <span className="line-through opacity-50">1.35</span>
+                      <span className="line-through opacity-85">1.35</span>
                       <ArrowRight className="h-3 w-3" />
                     </div>
                     <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">1.40</p>
@@ -137,6 +137,7 @@ export function MatchOfTheDay({
           </div>
         </FadeIn>
       </div>
+      {/* contrast-audit-ignore: decorative section-divider wave (SVG fill, not text) */}
       <div className="absolute bottom-0 left-0 right-0 overflow-hidden leading-none -mb-px">
         <svg viewBox="0 0 1200 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-8 text-slate-50 dark:text-slate-900/60" preserveAspectRatio="none">
           <path d="M0 40V20C200 0 400 40 600 20C800 0 1000 40 1200 20V40H0Z" fill="currentColor"/>

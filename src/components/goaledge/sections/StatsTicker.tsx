@@ -57,13 +57,13 @@ export function StatsTicker({ oddsFeed }: { oddsFeed: OddsFeedItem[] }) {
               </span>
               <div className="mx-2 h-4 w-px shrink-0 bg-slate-200 dark:bg-slate-700" />
               {oddsFeed.slice(0, 5).map((item, i) => (
-                <span key={`${item.matchId}-${item.timestamp}-${i}`} className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ${item.direction === "up" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400" : "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400"}`}>
+                <span key={`${item.matchId}-${item.timestamp}-${i}`} className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ${item.direction === "up" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400" : "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400"}`}>
                   <TrendingUp className={`h-3 w-3 ${item.direction === "down" ? "rotate-180" : ""}`} />
                   <span className="font-semibold">{item.homeTeam}</span>
                   <span className="odds-value tabular-nums">{item.oldOdds}</span>
                   <ArrowRight className="h-3 w-3 opacity-50" />
                   <span className="odds-value font-bold tabular-nums">{item.newOdds}</span>
-                  <span className="text-[10px] opacity-60">{item.bookmaker}</span>
+                  <span className="text-[10px]">{item.bookmaker}</span>
                 </span>
               ))}
             </div>

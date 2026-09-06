@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
+import { resolveRequestEmail } from "@/lib/auth";
 import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 // Plan pricing in Ksh
@@ -17,7 +18,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { email, amount, plan } = body;
+    const { email: bodyEmail, amount, plan } = body;
+    // A verified session wins over the email in the body.
+    const email = await resolveRequestEmail(
+      request,
+      typeof bodyEmail === "string" ? bodyEmail : ""
+    );
 
     // Validate required fields
     if (!email || !amount || !plan) {

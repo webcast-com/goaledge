@@ -32,7 +32,7 @@ export function AccumulatorOfTheDay({
         <FadeIn delay={0.1}>
           <div className="acca-card-hover mx-auto max-w-lg overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-b from-amber-50/50 to-white dark:border-amber-800/50 dark:from-amber-950/20 dark:to-slate-900">
             {/* Acca header */}
-            <div className="flex items-center justify-between bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-3.5 text-white">
+            <div className="flex items-center justify-between bg-gradient-to-r from-amber-600 to-orange-600 px-5 py-3.5 text-white">
               <div className="flex items-center gap-2">
                 <Flame className="h-5 w-5" />
                 <span className="font-bold">4-Fold Accumulator</span>

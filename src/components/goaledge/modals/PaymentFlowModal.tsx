@@ -235,7 +235,7 @@ export function PaymentFlowModal({
                     }`}
                   >
                     {plan.popular && (
-                      <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm">BEST VALUE</span>
+                      <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm">BEST VALUE</span>
                     )}
                     <p className={`text-[11px] font-bold ${selectedPlan === plan.key ? "text-emerald-700 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400"}`}>{plan.label}</p>
                     <p className="mt-1 text-base font-extrabold text-slate-900 dark:text-white">{plan.price}</p>
@@ -287,7 +287,7 @@ export function PaymentFlowModal({
                 ) : (
                   <span className="flex items-center justify-center gap-2">
                     Pay {currentPlan.price} with
-                    <span className="inline-flex items-center gap-1 rounded-md bg-white/15 px-2 py-0.5">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-black/15 px-2 py-0.5 ring-1 ring-white/20">
                       <span className="text-xs font-bold">Paystack</span>
                     </span>
                   </span>

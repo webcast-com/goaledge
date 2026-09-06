@@ -47,7 +47,7 @@ export function QuickPredict({
                   </div>
                 </div>
                 {predictResults[tip.id] && (
-                  <span className={`rounded-lg px-2 py-0.5 text-xs font-bold ${predictResults[tip.id] === "won" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"}`}>
+                  <span className={`rounded-lg px-2 py-0.5 text-xs font-bold ${predictResults[tip.id] === "won" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
                     {predictResults[tip.id] === "won" ? "✓ Correct" : "✗ Wrong"}
                   </span>
                 )}
@@ -89,7 +89,7 @@ export function QuickPredict({
               const correct = Object.values(results).filter(r => r === "won").length;
               toast.success(`🎯 ${correct}/3 correct! ${correct === 3 ? "Perfect score! 🏆" : correct >= 2 ? "Great predictions!" : "Better luck tomorrow!"}`);
             }}
-            className="rounded-xl bg-gradient-to-b from-purple-500 to-purple-600 px-8 py-3 text-sm font-bold text-white shadow-sm shadow-purple-600/20 transition-all hover:from-purple-500 hover:to-purple-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="rounded-xl bg-gradient-to-b from-purple-600 to-purple-700 px-8 py-3 text-sm font-bold text-white shadow-sm shadow-purple-600/20 transition-all hover:from-purple-600 hover:to-purple-800 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Submit Predictions ({Object.keys(quickPredictions).length}/3)
           </button>

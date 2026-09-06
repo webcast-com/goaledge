@@ -63,16 +63,16 @@ export function Footer({
               Expert football predictions powered by data analytics. Making smarter bets accessible to everyone.
             </p>
             <div className="mt-4 flex gap-2.5">
-              <button className="footer-social-btn flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-all hover:bg-emerald-100 hover:text-emerald-600 hover:shadow-sm dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400">
+              <button className="footer-social-btn flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 transition-all hover:bg-emerald-100 hover:text-emerald-600 hover:shadow-sm dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400">
                 <Twitter className="h-4 w-4" />
               </button>
-              <button className="footer-social-btn flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-all hover:bg-emerald-100 hover:text-emerald-600 hover:shadow-sm dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400">
+              <button className="footer-social-btn flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 transition-all hover:bg-emerald-100 hover:text-emerald-600 hover:shadow-sm dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400">
                 <Instagram className="h-4 w-4" />
               </button>
-              <button className="footer-social-btn flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-all hover:bg-emerald-100 hover:text-emerald-600 hover:shadow-sm dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400">
+              <button className="footer-social-btn flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 transition-all hover:bg-emerald-100 hover:text-emerald-600 hover:shadow-sm dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400">
                 <MessageCircle className="h-4 w-4" />
               </button>
-              <button className="footer-social-btn flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-all hover:bg-emerald-100 hover:text-emerald-600 hover:shadow-sm dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400">
+              <button className="footer-social-btn flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 transition-all hover:bg-emerald-100 hover:text-emerald-600 hover:shadow-sm dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400">
                 <Share2 className="h-4 w-4" />
               </button>
             </div>

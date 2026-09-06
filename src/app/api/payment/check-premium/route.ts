@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { resolveRequestEmail } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const email = searchParams.get("email");
+    // A verified session wins over the ?email= query string.
+    const email = await resolveRequestEmail(request, searchParams.get("email"));
 
     if (!email) {
       return NextResponse.json(

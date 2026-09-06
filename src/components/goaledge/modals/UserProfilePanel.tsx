@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { useSession, signOut } from "next-auth/react";
+import { useAuth } from "@/lib/session-context";
 import {
   Area,
   AreaChart,
@@ -32,6 +32,7 @@ import {
   Award,
 } from "lucide-react";
 import type { BetHistoryItem, BetSummary } from "@/types/goaledge";
+import type { Session } from "@/types/auth";
 
 interface BetHistoryResponse {
   bets: BetHistoryItem[];
@@ -50,7 +51,7 @@ export function UserProfilePanel({
   bankroll,
   onBankrollChange,
 }: {
-  session: ReturnType<typeof useSession>;
+  session: Session | null;
   bookmarkedTips: Set<string>;
   tipVotes: Record<string, "up" | "down">;
   betSlipLength: number;
@@ -81,10 +82,11 @@ export function UserProfilePanel({
   } | null>(null);
   const [referralsLoading, setReferralsLoading] = useState(false);
   const [refCopied, setRefCopied] = useState(false);
+  const { signOut } = useAuth();
 
   const userName = session?.user?.name || "Guest User";
   const userEmail = session?.user?.email || "demo@goaledge.com";
-  const isPremium = (session?.user as Record<string, unknown> | null)?.plan === "premium";
+  const isPremium = session?.user?.plan === "premium";
   const userInitial = userName.charAt(0).toUpperCase();
 
   // Real bet history from the API (demo user gets the demo email's bets)
@@ -264,7 +266,7 @@ export function UserProfilePanel({
                 <div className="min-w-0 flex-1">
                   <p className="text-lg font-bold text-slate-900 dark:text-white">{userName}</p>
                   <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{userEmail}</p>
-                  <span className={`mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${isPremium ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}>
+                  <span className={`mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${isPremium ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"}`}>
                     <Crown className="h-3 w-3" /> {isPremium ? "Premium" : "Free"}
                   </span>
                 </div>
@@ -380,7 +382,7 @@ export function UserProfilePanel({
                         <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{betLabel(bet)}</p>
                         <span className={`ml-2 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${
                           bet.status === "won" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" :
-                          bet.status === "lost" ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" :
+                          bet.status === "lost" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
                           bet.status === "pending" ? "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400" :
                           "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                         }`}>
@@ -432,7 +434,7 @@ export function UserProfilePanel({
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-bold text-slate-900 dark:text-white">Ksh {p.amount || "0"}</p>
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${p.status === "completed" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : p.status === "pending" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"}`}>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${p.status === "completed" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : p.status === "pending" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
                             {p.status || "unknown"}
                           </span>
                         </div>
@@ -582,13 +584,13 @@ export function UserProfilePanel({
 
               <button
                 onClick={() => toast.success("Data cleared!")}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-100 dark:border-red-800/50 dark:bg-red-950/20 dark:text-red-400"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-100 dark:border-red-800/50 dark:bg-red-950/20 dark:text-red-400"
               >
                 <Trash2 className="h-4 w-4" /> Clear all data
               </button>
 
               <button
-                onClick={() => { signOut(); onClose(); }}
+                onClick={() => { void signOut(); onClose(); }}
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 <LogOut className="h-4 w-4" /> Sign out

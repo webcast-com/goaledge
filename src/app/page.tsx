@@ -4,7 +4,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 
 // Auth
-import { useSession, signOut } from "next-auth/react";
+import { useAuth } from "@/lib/session-context";
 
 // Toast
 import { toast } from "sonner";
@@ -99,7 +99,7 @@ export default function HomePage() {
 
   const [bankroll, setBankroll] = useState("10000");
 
-  const { data: session } = useSession();
+  const { data: session, signOut } = useAuth();
   const [authLoading, setAuthLoading] = useState(false);
   const [authName, setAuthName] = useState("");
   const [authEmail, setAuthEmail] = useState("");
@@ -567,7 +567,7 @@ export default function HomePage() {
         onSetAuthOpen={setAuthOpen}
         onSetAuthError={setAuthError}
         onSetBetSlipOpen={setBetSlipOpen}
-        onSignOut={() => signOut()}
+        onSignOut={() => { void signOut(); }}
         onOpenMyBets={handleOpenMyBets}
         onFetchAdminTips={fetchAdminTips}
         onNotifPrefsChange={setNotifPrefs}
@@ -841,7 +841,7 @@ export default function HomePage() {
           betSlipLength={betSlip.length}
           bookmarkedCount={bookmarkedTips.size}
           tipVotesCount={Object.keys(tipVotes).length}
-          isPremium={(session?.user as Record<string, unknown> | null)?.plan === "premium"}
+          isPremium={session?.user?.plan === "premium"}
           tips={tips}
           stake={stake}
           onClose={() => setAchievementsOpen(false)}
@@ -853,7 +853,7 @@ export default function HomePage() {
         <TipDetailPanel
           tip={selectedTip}
           betSlipIds={betSlipIds}
-          isPremium={(session?.user as Record<string, unknown> | null)?.plan === "premium"}
+          isPremium={session?.user?.plan === "premium"}
           onClose={() => setSelectedTip(null)}
           onAddToSlip={() => { addToSlip(selectedTip); }}
           onCopy={() => copyTip(selectedTip)}

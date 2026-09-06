@@ -12,7 +12,7 @@ A football prediction & betting tips platform built with **Next.js 16 (App Route
 - 📱 **PWA** — installable on Android/iOS with offline app shell, standalone display, and home-screen icons
 - 💰 **Bankroll tracker** — your profile shows real bet history, per-bet P&L, ROI and a cumulative P&L chart (recharts)
 - 🎁 **Referral program** — every account has an invite code (`/?ref=CODE`); a referred signup grants the new user 2 free premium days, and the referrer earns 7 free premium days once their friend completes a first payment
-- 🔐 **Accounts & premium** — signup/sign-in (NextAuth credentials), premium plans via **Paystack** (daily/weekly/monthly passes), API-key settings panel
+- 🔐 **Accounts & premium** — signup/sign-in on the app's own session cookie (email + bcrypt password, no NextAuth), premium plans via **Paystack** (daily/weekly/monthly passes), API-key settings panel
 - 🛡️ **Rate limiting** — in-memory per-IP limits on register, newsletter, bets, payments and password-reset endpoints
 - ⚽ **Live scores & standings** — live data from football-data.org with graceful demo fallback
 - 🎨 Dark/light mode, animations, fully responsive
@@ -25,7 +25,7 @@ A football prediction & betting tips platform built with **Next.js 16 (App Route
 | Language   | TypeScript                                         |
 | Styling    | Tailwind CSS 4 + shadcn/ui                         |
 | Database   | SQLite via Prisma (`db/custom.db`)                 |
-| Auth       | NextAuth v4 (credentials, JWT sessions)            |
+| Auth       | Built-in: bcrypt passwords + signed HS256 session cookie ([details](#authentication)) |
 | Payments   | Paystack (initialize / verify / webhook)           |
 | Data       | football-data.org API (optional, with seed fallback) |
 | Realtime   | socket.io odds service (`mini-services/odds-service`) |
@@ -60,7 +60,7 @@ npm run dev          # http://localhost:3000
 | `NEXT_PUBLIC_PAYSTACK_KEY`| ❌       | Paystack inline popup in the browser (needs secret too)        |
 | `FOOTBALL_API_KEY`        | ❌       | football-data.org key (or save it in Admin → API Key panel)    |
 | `AFFILIATE_URL_TEMPLATE`  | ❌       | Tracked affiliate links for the odds comparison (see below)    |
-| `NEXTAUTH_SECRET`         | ❌       | Session secret (a dev default is used if unset — set it in prod) |
+| `AUTH_SECRET`             | ❌       | Signs the session cookie (a dev default is used if unset — set it in prod). The legacy `NEXTAUTH_SECRET` is still honoured, so existing sessions survive the upgrade |
 
 ## Scripts
 
@@ -92,8 +92,10 @@ npm run dev          # http://localhost:3000
 | `GET /api/slips/[slug]`        | Public slip data (rendered at `/slip/[slug]`) |
 | `GET /api/referrals?email=`    | Referral code, stats & referral list        |
 | `POST /api/referrals/validate` | Check a referral code before signup         |
-| `POST /api/auth/register`      | Register account (rate-limited)             |
-| `/api/auth/*`                  | NextAuth (csrf, callback, session, signout)  |
+| `POST /api/auth/register`      | Create account + sign in (rate-limited)     |
+| `POST /api/auth/login`         | Sign in with email + password (rate-limited) |
+| `GET /api/auth/session`        | Current user from the session cookie (`{ session: null }` for guests) |
+| `POST /api/auth/logout`        | Sign out (expires the cookie)                |
 | `POST /api/auth/reset-password`| Request password reset (stub — add mailer)   |
 | `POST /api/newsletter`         | Newsletter signup                            |
 | `POST /api/bets/place`         | Place a bet (auto-settled if tips resolved)  |
@@ -102,6 +104,63 @@ npm run dev          # http://localhost:3000
 | `POST /api/payment/verify`     | Verify a charge & activate premium           |
 | `POST /api/payment/webhook`    | Paystack webhook (HMAC-verified)             |
 | `GET /api/settings/api-key`    | Check football-data key status               |
+
+## Authentication
+
+GoalEdge owns its auth — there is **no NextAuth** (or any other auth library) in
+the dependency tree. Passwords are hashed with `bcryptjs` (cost 12) and the
+session is a signed **HS256 JWT** kept in an HttpOnly cookie.
+
+```
+POST /api/auth/login      { email, password }  → 200 { session } + Set-Cookie: goaledge.session
+POST /api/auth/register   { name, email, password, referralCode? } → 201 + Set-Cookie (auto sign-in)
+GET  /api/auth/session                         → 200 { session: { user, expires } | null }
+POST /api/auth/logout                          → 200 + expired cookie
+```
+
+**Cookie** — `goaledge.session`, `HttpOnly`, `SameSite=Lax`, `Path=/`,
+`Max-Age=2592000` (30 days), and `Secure` whenever the request arrives over
+HTTPS (including behind a proxy that sets `X-Forwarded-Proto`). The client can
+never read the token; it asks `/api/auth/session` for the user object.
+
+**Server** — `src/lib/session-token.ts` signs and verifies tokens with the Web
+Crypto API (`AUTH_SECRET`, falling back to the legacy `NEXTAUTH_SECRET`);
+`src/lib/auth.ts` adds the password, cookie and user helpers:
+
+```ts
+import { getSessionUser, resolveRequestEmail } from "@/lib/auth";
+
+export async function GET(request: NextRequest) {
+  const user = await getSessionUser(request);        // SessionUser | null
+  const email = await resolveRequestEmail(request, request.nextUrl.searchParams.get("email"));
+  // …
+}
+```
+
+The token is verified and the user is then re-read from the database, so plan
+changes (a premium purchase, a referral bonus, an admin downgrade) show up on
+the next request instead of waiting for the token to expire — and a deleted
+account is signed out immediately. `resolveRequestEmail()` makes a signed-in
+session authoritative over any `?email=`/body email, so one account cannot read
+another account's bets or payments; signed-out visitors still fall back to the
+email they supply, which the guest/demo flows rely on.
+
+**Client** — `src/lib/session-context.tsx` provides the session (fetched on
+mount and refreshed when the tab regains focus):
+
+```tsx
+import { useAuth, useSession } from "@/lib/session-context";
+
+const { data: session } = useSession();          // next-auth-compatible shape
+const { signIn, signUp, signOut } = useAuth();   // plain fetch, no page reload
+
+const result = await signIn(email, password);    // { ok, error?, session? }
+if (result.ok) closeModal();
+```
+
+Emails are stored lowercase and looked up case-insensitively, so `Foo@Bar.com`
+and `foo@bar.com` are the same account (older mixed-case rows keep their stored
+casing, which other tables reference).
 
 ## Payment modes
 
@@ -180,7 +239,7 @@ src/
   app/
     page.tsx              # Landing page (all sections + modals)
     api/                  # Route handlers (see table above)
-    layout.tsx            # Fonts, theme, auth provider, metadata
+    layout.tsx            # Fonts, theme, session provider, metadata
   components/
     goaledge/             # Site components (Header, TipCard, sections…)
     goaledge/modals/      # AuthModal, AdminPanel, OddsCompareModal, …
@@ -189,7 +248,9 @@ src/
     football-api.ts       # football-data.org client + seed data
     odds-comparison.ts    # Bookmaker odds board + affiliate links
     bet-settlement.ts     # Auto-settlement of bet slips
-    auth.ts               # NextAuth options
+    auth.ts               # Server auth: passwords, session cookie, current user
+    session-token.ts      # HS256 sign/verify for the session token (Web Crypto)
+    session-context.tsx   # Client SessionProvider + useSession()/useAuth()
   types/goaledge.ts       # Shared types
 mini-services/odds-service # socket.io live odds streamer
 examples/websocket/        # Minimal socket.io chat example

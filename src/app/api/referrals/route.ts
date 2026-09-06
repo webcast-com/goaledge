@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { resolveRequestEmail } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,8 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(request: NextRequest) {
   try {
-    const email = request.nextUrl.searchParams.get("email");
+    // A verified session wins over the ?email= query string.
+    const email = await resolveRequestEmail(request, request.nextUrl.searchParams.get("email"));
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }

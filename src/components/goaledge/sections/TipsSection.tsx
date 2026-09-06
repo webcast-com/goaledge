@@ -189,7 +189,7 @@ export function TipsSection({
             className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
               activeFilter === "Saved"
                 ? "bg-amber-500 text-white shadow-sm"
-                : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
             }`}
           >
             <span className="flex items-center gap-1"><Star className="h-3 w-3" /> Saved {bookmarkedTips.size > 0 && `(${bookmarkedTips.size})`}</span>
