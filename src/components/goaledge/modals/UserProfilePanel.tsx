@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { useSession, signOut } from "next-auth/react";
+import { useAuth } from "@/lib/session-context";
 import {
   Area,
   AreaChart,
@@ -32,6 +32,7 @@ import {
   Award,
 } from "lucide-react";
 import type { BetHistoryItem, BetSummary } from "@/types/goaledge";
+import type { Session } from "@/types/auth";
 
 interface BetHistoryResponse {
   bets: BetHistoryItem[];
@@ -50,7 +51,7 @@ export function UserProfilePanel({
   bankroll,
   onBankrollChange,
 }: {
-  session: ReturnType<typeof useSession>;
+  session: Session | null;
   bookmarkedTips: Set<string>;
   tipVotes: Record<string, "up" | "down">;
   betSlipLength: number;
@@ -81,10 +82,11 @@ export function UserProfilePanel({
   } | null>(null);
   const [referralsLoading, setReferralsLoading] = useState(false);
   const [refCopied, setRefCopied] = useState(false);
+  const { signOut } = useAuth();
 
   const userName = session?.user?.name || "Guest User";
   const userEmail = session?.user?.email || "demo@goaledge.com";
-  const isPremium = (session?.user as Record<string, unknown> | null)?.plan === "premium";
+  const isPremium = session?.user?.plan === "premium";
   const userInitial = userName.charAt(0).toUpperCase();
 
   // Real bet history from the API (demo user gets the demo email's bets)
@@ -588,7 +590,7 @@ export function UserProfilePanel({
               </button>
 
               <button
-                onClick={() => { signOut(); onClose(); }}
+                onClick={() => { void signOut(); onClose(); }}
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 <LogOut className="h-4 w-4" /> Sign out

@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { X, RefreshCw, ArrowLeft, Mail, Gift, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/session-context";
 
 export interface AuthModalProps {
   open: boolean;
@@ -45,6 +46,7 @@ export function AuthModal({
   onSetConfirm,
   onSetReferralCode,
 }: AuthModalProps) {
+  const { signIn, signUp } = useAuth();
   const [resetMode, setResetMode] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
@@ -207,72 +209,60 @@ export function AuthModal({
                 onSubmit={async (e) => {
                   e.preventDefault();
                   onSetError("");
-                  onSetLoading(true);
-                  try {
-                    if (mode === "signin") {
-                      // Use form submission for reliable cookie setting
-                      const csrfRes = await fetch("/api/auth/csrf");
-                      const { csrfToken } = await csrfRes.json();
-                      const form = document.createElement("form");
-                      form.method = "POST";
-                      form.action = "/api/auth/callback/credentials";
-                      ["email", "password", "csrfToken"].forEach((n) => {
-                        const input = document.createElement("input");
-                        input.type = "hidden";
-                        input.name = n;
-                        input.value = n === "csrfToken" ? csrfToken : (n === "email" ? email : password);
-                        form.appendChild(input);
-                      });
-                      document.body.appendChild(form);
-                      form.submit();
+
+                  if (mode === "signup") {
+                    if (password !== confirm) {
+                      onSetError("Passwords do not match");
                       return;
-                    } else {
-                      if (password !== confirm) {
-                        onSetError("Passwords do not match");
-                        onSetLoading(false);
-                        return;
-                      }
-                      if (password.length < 6) {
-                        onSetError("Password must be at least 6 characters");
-                        onSetLoading(false);
-                        return;
-                      }
-                      const res = await fetch("/api/auth/register", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
+                    }
+                    if (password.length < 6) {
+                      onSetError("Password must be at least 6 characters");
+                      return;
+                    }
+                  }
+
+                  onSetLoading(true);
+                  // Plain fetch + HttpOnly session cookie — no CSRF token and no
+                  // full-page form submit, so the dialog just closes on success.
+                  const result =
+                    mode === "signin"
+                      ? await signIn(email, password)
+                      : await signUp({
                           name,
                           email,
                           password,
                           referralCode: referralCode.trim() || undefined,
-                        }),
-                      });
-                      const data = await res.json();
-                      if (!res.ok) {
-                        onSetError(data.error || "Registration failed");
-                      } else {
-                        // Auto sign-in via form submission for reliable cookie
-                        const csrfRes2 = await fetch("/api/auth/csrf");
-                        const { csrfToken: csrf2 } = await csrfRes2.json();
-                        const form2 = document.createElement("form");
-                        form2.method = "POST";
-                        form2.action = "/api/auth/callback/credentials";
-                        ["email", "password", "csrfToken"].forEach((n) => {
-                          const input = document.createElement("input");
-                          input.type = "hidden";
-                          input.name = n;
-                          input.value = n === "csrfToken" ? csrf2 : (n === "email" ? email : password);
-                          form2.appendChild(input);
                         });
-                        document.body.appendChild(form2);
-                        form2.submit();
-                        return;
-                      }
-                    }
-                  } catch {
-                    onSetError("Network error. Please try again.");
-                  } finally {
-                    onSetLoading(false);
+                  onSetLoading(false);
+
+                  if (!result.ok) {
+                    onSetError(
+                      result.error ||
+                        (mode === "signin" ? "Sign in failed" : "Registration failed")
+                    );
+                    return;
+                  }
+
+                  const signedInName =
+                    mode === "signup"
+                      ? name.trim()
+                      : result.session?.user?.name?.trim() || "";
+                  onSetPassword("");
+                  onSetConfirm("");
+                  onClose();
+
+                  if (mode === "signup") {
+                    toast.success(
+                      result.referral?.applied
+                        ? `Account created — ${result.referral.bonusDays} free premium days added!`
+                        : "Account created — you're signed in!"
+                    );
+                  } else {
+                    toast.success(
+                      signedInName
+                        ? `Welcome back, ${signedInName.split(" ")[0]}!`
+                        : "Welcome back!"
+                    );
                   }
                 }}
                 className="space-y-4"

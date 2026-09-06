@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/goaledge/theme-toggle";
 import type { ApiStatus, Tip, Notification } from "@/types/goaledge";
+import type { Session } from "@/types/auth";
 
 /* ================================================================== */
 /*  Props                                                              */
@@ -33,7 +34,7 @@ export interface HeaderProps {
   apiStatus: ApiStatus;
   dataSource: string;
   tipsCount: number;
-  session: any;
+  session: Session | null;
   profileOpen: boolean;
   notificationsOpen: boolean;
   betSlipLength: number;
@@ -375,8 +376,7 @@ export function Header({
                     {session.user?.name ||
                       session.user?.email?.split("@")[0]}
                   </span>
-                  {(session.user as Record<string, unknown>)?.plan ===
-                    "premium" && (
+                  {session.user?.plan === "premium" && (
                     <span className="hidden items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 sm:inline-flex">
                       <Crown className="h-2.5 w-2.5" /> PRO
                     </span>

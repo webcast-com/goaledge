@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { resolveRequestEmail } from "@/lib/auth";
 import { settleBet } from "@/lib/bet-settlement";
 import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { email, betType, legs, stake, totalOdds, potentialReturn } = body as {
+    const { email: bodyEmail, betType, legs, stake, totalOdds, potentialReturn } = body as {
       email: string;
       betType: string;
       legs: BetLeg[];
@@ -29,6 +30,9 @@ export async function POST(request: NextRequest) {
       totalOdds: number;
       potentialReturn: number;
     };
+
+    // A verified session wins over the email in the body.
+    const email = await resolveRequestEmail(request, bodyEmail);
 
     // Validate
     if (!email || !betType || !legs || legs.length === 0 || !stake || stake <= 0) {
