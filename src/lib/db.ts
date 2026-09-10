@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaLibSQL } from '@prisma/adapter-libsql'
+import { PrismaLibSql } from '@prisma/adapter-libsql'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -32,7 +32,7 @@ function sqliteUrl() {
   return `file:${process.cwd()}/${p.replace(/^\.\//, '')}`
 }
 
-const adapter = new PrismaLibSQL({ url: sqliteUrl() })
+const adapter = new PrismaLibSql({ url: sqliteUrl() })
 
 export const db =
   globalForPrisma.prisma ??
