@@ -1,0 +1,24 @@
+# Base44 dev environment — runs the app from cloned source with live reload.
+# The app is a Next.js 16 + Prisma (SQLite) project using bun. It runs in demo
+# mode without external credentials; Paystack/Football API keys are optional.
+services:
+  web:
+    image: oven/bun:1.2
+    working_dir: /app
+    volumes:
+      - .:/app
+      # keep container-installed node_modules isolated from the host bind mount
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      # lets next.config.ts derive the allowedDevOrigins preview host at runtime
+      - BASE44_PUBLIC_HOST_SUFFIX=${BASE44_PUBLIC_HOST_SUFFIX}
+      # bind mounts often need polling for HMR to fire
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+    env_file:
+      - ./.env.base44-defaults
+      - /run/base44/app.env
+    command: sh -c "bun install && bunx prisma generate && bun run db:push && bun run db:seed && bunx next dev --webpack -p 3000"
+    restart: unless-stopped

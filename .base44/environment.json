@@ -1,0 +1,32 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    {
+      "name": "PAYSTACK_SECRET_KEY",
+      "description": "Paystack secret key for live payments (sk_test_...). Optional — app runs in demo mode without it.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "NEXT_PUBLIC_PAYSTACK_KEY",
+      "description": "Paystack public key for live checkout (pk_test_...). Optional — app runs in demo mode without it.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "FOOTBALL_API_KEY",
+      "description": "football-data.org API key for live fixture data. Optional — app falls back to seed data without it.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "AFFILIATE_URL_TEMPLATE",
+      "description": "Template for tracked affiliate links in odds comparison. Optional.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "AUTH_SECRET",
+      "description": "Signs the session cookie (HS256). Optional — a dev secret is used if unset.",
+      "requiredAtBoot": false
+    }
+  ]
+}

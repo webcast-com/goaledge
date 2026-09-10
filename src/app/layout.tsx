@@ -51,16 +51,22 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
   },
   manifest: "/manifest.webmanifest",
+  metadataBase: new URL("https://goaledge.app"),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "GoalEdge — Smarter Football Predictions",
     description: "Predict smarter. Win more often. Expert tips across 10+ leagues.",
     siteName: "GoalEdge",
     type: "website",
+    images: [{ url: "/icons/icon-512.png", width: 512, height: 512, alt: "GoalEdge" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "GoalEdge — Smarter Football Predictions",
     description: "Predict smarter. Win more often.",
+    images: ["/icons/icon-512.png"],
   },
 };
 

@@ -31,7 +31,7 @@ export function Testimonials() {
                 "The accumulator slips alone pay for themselves. Best KSH 100 I spend each week.",
               name: "Tunde B.",
               role: "Premium member",
-              color: "rgb(16, 185, 129)",
+              avatarColor: "rgb(16, 185, 129)",
               initial: "T",
             },
             {
@@ -40,7 +40,7 @@ export function Testimonials() {
                 "Even the free tips are sharper than most paid services I've tried. Clean dashboard too.",
               name: "Grace M.",
               role: "Free member",
-              color: "rgb(14, 165, 233)",
+              avatarColor: "rgb(14, 165, 233)",
               initial: "G",
             },
             {
@@ -49,7 +49,7 @@ export function Testimonials() {
                 "The in-depth analysis actually teaches you how to think about matches. Game changer.",
               name: "Samuel O.",
               role: "Premium member",
-              color: "rgb(245, 158, 11)",
+              avatarColor: "rgb(245, 158, 11)",
               initial: "S",
             },
             {
@@ -58,7 +58,7 @@ export function Testimonials() {
                 "The free tier is generous. I started winning consistently before even considering premium.",
               name: "Amina K.",
               role: "Free member",
-              color: "rgb(139, 92, 246)",
+              avatarColor: "rgb(139, 92, 246)",
               initial: "A",
             },
             {
@@ -67,7 +67,7 @@ export function Testimonials() {
                 "GoalEdge's NPFL coverage is unmatched. Finally, someone takes African football seriously.",
               name: "Chidi N.",
               role: "Premium member",
-              color: "rgb(236, 72, 153)",
+              avatarColor: "rgb(236, 72, 153)",
               initial: "C",
             },
           ].map((t) => (

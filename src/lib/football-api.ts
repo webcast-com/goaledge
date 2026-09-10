@@ -226,7 +226,7 @@ export async function getCompetitions(): Promise<Competition[]> {
         name: c.name as string,
         code: (c.code as string) || "",
         emblem: (c.emblem as string) || "",
-        country: c.area?.name || (c.area as Record<string, string>)?.name || "",
+        country: (c.area as Record<string, string> | undefined)?.name || "",
         type: c.type as string,
       }));
     setCache(cacheKey, comps, 60 * 60 * 1000); // 1 hour
@@ -514,7 +514,7 @@ function parseMatch(m: Record<string, unknown>): FootballMatch {
     competition: competition.name || "Unknown",
     competitionEmblem: competition.emblem || "",
     competitionCode: competition.code || "",
-    minute: (score.duration as string) || undefined,
+    minute: (m.minute as number) || undefined,
   };
 }
 

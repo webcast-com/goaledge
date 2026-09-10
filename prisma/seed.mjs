@@ -11,8 +11,19 @@
  * Usage: npm run db:seed   (or: npx prisma db seed)
  */
 import { PrismaClient } from "@prisma/client";
+import { PrismaLibSQL } from "@prisma/adapter-libsql";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const db = new PrismaClient();
+// Mirror src/lib/db.ts: the schema uses engineType "client" + driver adapters,
+// so a bare `new PrismaClient()` cannot connect. Resolve the SQLite file from
+// the project root (prisma/ is one level down).
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(__dirname, "..");
+const dbPath = path.join(projectRoot, "db", "custom.db");
+
+const adapter = new PrismaLibSQL({ url: `file:${dbPath}` });
+const db = new PrismaClient({ adapter });
 
 function fmtDate(offsetDays, hour) {
   const d = new Date();

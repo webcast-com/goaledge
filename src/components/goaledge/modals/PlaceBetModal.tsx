@@ -24,13 +24,13 @@ interface PlaceBetModalProps {
   myBetsOpen: boolean;
   myBets: BetHistoryItem[];
   myBetsSummary: BetSummary | null;
-  myBetsFilter: string;
+  myBetsFilter: "all" | "pending" | "won" | "lost" | "void";
   myBetsLoading: boolean;
   onClose: () => void;
   onPlaceBet: () => void;
   onOpenMyBets: () => void;
   onFetchMyBets: () => void;
-  onSetMyBetsFilter: (f: string) => void;
+  onSetMyBetsFilter: (f: "all" | "pending" | "won" | "lost" | "void") => void;
   onSetMyBetsOpen: (v: boolean) => void;
   onSetBetSlipOpen: (v: boolean) => void;
 }
