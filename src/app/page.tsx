@@ -144,6 +144,9 @@ export default function HomePage() {
   // Real API status
   const [apiStatus, setApiStatus] = useState<ApiStatus>("checking");
   const [dataSource, setDataSource] = useState<string>("");
+  // Why live data is missing (set by the API routes), shown as a tooltip on the
+  // "Demo Data" badge instead of silently serving seeded tips.
+  const [apiNote, setApiNote] = useState<string | null>(null);
   const [liveRefreshTimer, setLiveRefreshTimer] = useState<NodeJS.Timeout | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<string>("");
   // Place Bet flow
@@ -293,6 +296,7 @@ export default function HomePage() {
       }));
       setTips(tipsList);
       setDataSource(data.source || "unknown");
+      setApiNote(data.note ?? null);
       if (data.apiConfigured) {
         setApiStatus(data.source === "live" ? "live" : "seed");
       } else {
@@ -608,6 +612,7 @@ export default function HomePage() {
         <TipsSection
           loading={loading}
           apiStatus={apiStatus}
+          apiNote={apiNote}
           tipsCount={tips.length}
           selectedDate={selectedDate}
           leagues={leagues}

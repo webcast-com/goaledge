@@ -1674,3 +1674,47 @@ Stage Summary:
 - Live stats ticker provides social proof and engagement
 - Ticker hidden on mobile to save space
 - Zero lint errors
+---
+Task ID: 15
+Agent: Arena agent
+Task: Diagnose "API gets the league table but no matches" and make live-data failures visible
+
+Work Log:
+- Reproduced the asymmetry in the code paths: `/api/standings` is one unfiltered request
+  (`/v4/competitions/{id}/standings`) that falls back to a seed table, and the Standings
+  React component ships its own hardcoded table, so the section always renders something
+  that looks live. `/api/tips` uses `/v4/matches?dateFrom&dateTo&status=SCHEDULED` and, when
+  that returns nothing or fails, silently serves DB/seed tips — no error, no log.
+- Cross-checked the committed SQLite DB: last successful live fetch 2026-09-10T20:27Z
+  (12 `real_*` tips for matches on 14–16 Sep). The 09-06T23:54 vs 09-07T00:02 tip batches
+  prove the `dateTo`-is-exclusive window behaviour of v4.
+- Found the key-precedence trap: `AppSetting.football_api_key` (7508…eaaa, saved 2026-07-31)
+  is read before `FOOTBALL_API_KEY`, so the 2026-09-11 ".env key format" commit had no
+  runtime effect. `getApiKeyInfo()` + `/api/diagnostics/football` now surface this.
+- Verified from the sandbox that api.football-data.org is unreachable while
+  api.github.com/registry.npmjs.org work (egress allowlist) — added a script and endpoint so
+  the same check can be run inside the real container.
+- Fixed football-api.ts: dropped the `status=SCHEDULED` filter (fixtures are locally filtered
+  to SCHEDULED + TIMED — football-data.org flips to TIMED when the kick-off time is confirmed),
+  `dateTo = today+8` for a real 7-day window, `getFinishedMatches()` no longer asks for an
+  empty range, no more caching of empty/failed results, 15s fetch timeout, bounded per-league
+  fallback (early exit on network/auth failures, 25s budget), per-upstream-attempt diagnostics
+  + console.warn on every failure, `FOOTBALL_API_MIN_INTERVAL_MS` pacing knob.
+- Added `GET /api/diagnostics/football[?probe=1]`, `scripts/football-api-check.mjs`
+  (standalone, no deps, `--key/--delay/--base` flags, verdict section), `note` on the seed
+  responses of /api/tips, /api/standings, /api/fixtures, /api/live-scores, and Live/Demo
+  badges with the upstream reason as tooltip in the Standings and Tips sections.
+- Made `/api/tips` persist tips inside its own try/catch so a DB error can no longer turn a
+  successful live fetch into seed tips.
+- Added `src/lib/football-api.test.ts` (10 cases). Full suite 50 tests pass; ESLint 0 errors;
+  tsc clean for all touched files (pre-existing Prisma/socket.io errors unchanged).
+- Documented the two gotchas (DB key shadows .env, SCHEDULED vs TIMED) in README
+  "Live data troubleshooting" and replaced the real-looking key in .env.example with a placeholder.
+
+Stage Summary:
+- Root cause candidates are now all observable instead of silently masked: no key, blocked
+  network, 401/403 plan restriction, 429 rate limit, or an empty query result.
+- The specific "matches missing but table present" bug is the `status=SCHEDULED` filter
+  (plus the table's hardcoded fallback hiding that it was seed data all along).
+- Report: FOOTBALL-API-DIAGNOSIS.md — run `node scripts/football-api-check.mjs` or
+  `curl localhost:3000/api/diagnostics/football?probe=1` in the deployed container to confirm.

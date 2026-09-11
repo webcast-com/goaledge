@@ -3,6 +3,7 @@ import {
   isApiConfigured,
   getStandings,
   getAllStandings,
+  getUpstreamNote,
 } from "@/lib/football-api";
 
 export const dynamic = "force-dynamic";
@@ -81,12 +82,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fallback
+    // Fallback — include *why* live data is missing so the UI can say so instead
+    // of silently showing a hardcoded table.
+    const note = getUpstreamNote();
     if (league !== "all" && SEED_STANDINGS[league as keyof typeof SEED_STANDINGS]) {
       return NextResponse.json({
         standings: SEED_STANDINGS[league as keyof typeof SEED_STANDINGS],
         source: "seed",
         apiConfigured: await isApiConfigured(),
+        note,
       });
     }
 
@@ -94,6 +98,7 @@ export async function GET(request: NextRequest) {
       standings: SEED_STANDINGS.PL,
       source: "seed",
       apiConfigured: await isApiConfigured(),
+      note,
     });
   } catch (error) {
     console.error("Standings API error:", error);
@@ -101,6 +106,7 @@ export async function GET(request: NextRequest) {
       standings: SEED_STANDINGS.PL,
       source: "fallback",
       apiConfigured: false,
+      note: getUpstreamNote(),
     });
   }
 }

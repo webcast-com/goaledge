@@ -6,6 +6,7 @@ import {
   generateTipsFromMatches,
   getSeedTips,
   getCompetitions,
+  getUpstreamNote,
   type GeneratedTip,
 } from "@/lib/football-api";
 
@@ -20,38 +21,48 @@ export async function GET() {
       if (matches.length > 0) {
         const tips = generateTipsFromMatches(matches);
 
-        // Store real tips in DB for persistence
-        for (const tip of tips) {
-          await db.tip.upsert({
-            where: { id: tip.id },
-            create: {
-              id: tip.id,
-              league: tip.league,
-              country: tip.country,
-              flag: tip.flag,
-              homeTeam: tip.homeTeam,
-              awayTeam: tip.awayTeam,
-              matchTime: tip.matchTime,
-              predictionType: tip.predictionType,
-              prediction: tip.prediction,
-              odds: tip.odds,
-              confidence: tip.confidence,
-              confidenceLabel: tip.confidenceLabel,
-              status: "upcoming",
-              tipster: tip.tipster,
-              isPremium: tip.isPremium,
-            },
-            update: {
-              league: tip.league,
-              homeTeam: tip.homeTeam,
-              awayTeam: tip.awayTeam,
-              matchTime: tip.matchTime,
-              prediction: tip.prediction,
-              odds: tip.odds,
-              confidence: tip.confidence,
-              confidenceLabel: tip.confidenceLabel,
-            },
-          });
+        // Store real tips in DB for persistence. Kept in its own try/catch: a DB
+        // hiccup (locked SQLite file, missing table, …) must not throw the whole
+        // route into the seed fallback — that is how "live matches" turned into
+        // "demo tips" without any visible error.
+        try {
+          for (const tip of tips) {
+            await db.tip.upsert({
+              where: { id: tip.id },
+              create: {
+                id: tip.id,
+                league: tip.league,
+                country: tip.country,
+                flag: tip.flag,
+                homeTeam: tip.homeTeam,
+                awayTeam: tip.awayTeam,
+                matchTime: tip.matchTime,
+                predictionType: tip.predictionType,
+                prediction: tip.prediction,
+                odds: tip.odds,
+                confidence: tip.confidence,
+                confidenceLabel: tip.confidenceLabel,
+                status: "upcoming",
+                tipster: tip.tipster,
+                isPremium: tip.isPremium,
+              },
+              update: {
+                league: tip.league,
+                homeTeam: tip.homeTeam,
+                awayTeam: tip.awayTeam,
+                matchTime: tip.matchTime,
+                prediction: tip.prediction,
+                odds: tip.odds,
+                confidence: tip.confidence,
+                confidenceLabel: tip.confidenceLabel,
+              },
+            });
+          }
+        } catch (dbError) {
+          console.error(
+            "[tips] could not persist live tips to the database — serving them anyway:",
+            dbError
+          );
         }
 
         const competitions = await getCompetitions();
@@ -100,6 +111,7 @@ export async function GET() {
         tips: formatted,
         source: "database",
         apiConfigured: await isApiConfigured(),
+        note: getUpstreamNote(),
       });
     }
 
@@ -107,6 +119,7 @@ export async function GET() {
       tips: getSeedTips(),
       source: "seed",
       apiConfigured: await isApiConfigured(),
+      note: getUpstreamNote(),
     });
   } catch (error) {
     console.error("Tips API error:", error);
@@ -116,6 +129,7 @@ export async function GET() {
       tips: getSeedTips(),
       source: "fallback",
       apiConfigured: await isApiConfigured(),
+      note: getUpstreamNote(),
     });
   }
 }

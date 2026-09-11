@@ -58,7 +58,8 @@ npm run dev          # http://localhost:3000
 | `DATABASE_URL`            | ✅       | SQLite path (default `file:../db/custom.db`)                   |
 | `PAYSTACK_SECRET_KEY`     | ❌       | Real Paystack charges; **absent = demo checkout**              |
 | `NEXT_PUBLIC_PAYSTACK_KEY`| ❌       | Paystack inline popup in the browser (needs secret too)        |
-| `FOOTBALL_API_KEY`        | ❌       | football-data.org key (or save it in Admin → API Key panel)    |
+| `FOOTBALL_API_KEY`        | ❌       | football-data.org key (or save it in Admin → API Key panel — **a saved key wins over this variable**) |
+| `FOOTBALL_API_MIN_INTERVAL_MS` | ❌ | Pause between football-data.org calls (default `6100` ≈ free tier's 10 req/min; lower it on a paid plan) |
 | `AFFILIATE_URL_TEMPLATE`  | ❌       | Tracked affiliate links for the odds comparison (see below)    |
 | `AUTH_SECRET`             | ❌       | Signs the session cookie (a dev default is used if unset — set it in prod). The legacy `NEXTAUTH_SECRET` is still honoured, so existing sessions survive the upgrade |
 
@@ -104,6 +105,44 @@ npm run dev          # http://localhost:3000
 | `POST /api/payment/verify`     | Verify a charge & activate premium           |
 | `POST /api/payment/webhook`    | Paystack webhook (HMAC-verified)             |
 | `GET /api/settings/api-key`    | Check football-data key status               |
+| `GET /api/diagnostics/football`| Why live data is (not) showing up: key source, last upstream status/error, cache state. Add `?probe=1` to re-query football-data.org directly |
+
+## Live data troubleshooting
+
+Live fixtures/standings come from [football-data.org](https://www.football-data.org).
+When a call fails the app **falls back to seed data** (and the standings section has a
+hardcoded sample table), which used to make "no matches" impossible to debug. Now:
+
+```bash
+# 1. What the app knows: key source, last upstream status code, cache contents
+curl -s localhost:3000/api/diagnostics/football | jq
+
+# 2. Re-query football-data.org itself (3 calls, ~20s: free tier = 10 req/min)
+curl -s "localhost:3000/api/diagnostics/football?probe=1" | jq '.problems, .probes'
+
+# 3. Or straight from a shell (works even if the app won't boot)
+node scripts/football-api-check.mjs          # add --delay=0 to go faster
+```
+
+Reading the result:
+
+| Symptom | Meaning |
+| ------- | ------- |
+| `"source": "none"` | no key configured — everything is seed data |
+| status `null` | the request never reached the API (Docker network, blocked egress, DNS, TLS) |
+| `401` / `403` | invalid key, or the plan does not cover that resource |
+| `429` | free-tier rate limit (10 requests/minute) — the app waits 60s and retries once |
+| `200` but `0` items | the API answered fine, that query just matched nothing (wrong status filter / date window) |
+
+Two gotchas that bit this app:
+
+1. **A key saved in the DB shadows `.env`.** `getApiKey()` reads `AppSetting.football_api_key`
+   first, so editing `FOOTBALL_API_KEY` has no effect while a key is stored in the app —
+   remove it with `DELETE /api/settings/api-key` (or Admin → API Key) to fall back to `.env`.
+2. **`status=SCHEDULED` hides fixtures.** football-data.org switches a match from
+   `SCHEDULED` to `TIMED` as soon as its kick-off time is confirmed, and v4 treats
+   `dateTo` as *exclusive*. The client now requests a date window with no status filter
+   and keeps `SCHEDULED` + `TIMED` locally.
 
 ## Authentication
 

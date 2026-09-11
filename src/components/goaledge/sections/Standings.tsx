@@ -137,6 +137,9 @@ export function Standings() {
   const [standingsData, setStandingsData] = useState<StandingRow[]>(SEED_STANDINGS.PL);
   const [loading, setLoading] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
+  // "live" = straight from football-data.org, "seed"/"fallback" = sample table.
+  const [source, setSource] = useState<string>("seed");
+  const [note, setNote] = useState<string | null>(null);
   const tableRef = useRef<HTMLDivElement>(null);
 
   const fetchStandings = useCallback(async (leagueCode: LeagueCode) => {
@@ -146,12 +149,18 @@ export function Standings() {
       const data = await res.json();
       if (data.standings && data.standings.length > 0) {
         setStandingsData(data.standings);
+        setSource(data.source ?? "live");
+        setNote(data.note ?? null);
       } else {
         // Fallback to seed data
         setStandingsData(SEED_STANDINGS[leagueCode] ?? []);
+        setSource("seed");
+        setNote(data.note ?? null);
       }
     } catch {
       setStandingsData(SEED_STANDINGS[leagueCode] ?? []);
+      setSource("fallback");
+      setNote("Could not reach /api/standings");
     } finally {
       setLoading(false);
     }
@@ -189,6 +198,25 @@ export function Standings() {
               </h2>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 Top 5 teams — updated after each matchday.
+                {source === "live" ? (
+                  <span
+                    className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                    title="Live table from football-data.org"
+                  >
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    </span>
+                    Live · football-data.org
+                  </span>
+                ) : (
+                  <span
+                    className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                    title={note ?? "Live table unavailable — showing sample data"}
+                  >
+                    Demo table{note ? " ⓘ" : ""}
+                  </span>
+                )}
               </p>
             </div>
             <button

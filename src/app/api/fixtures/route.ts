@@ -6,6 +6,7 @@ import {
   getFinishedMatches,
   generateTipsFromMatches,
   getSeedTips,
+  getUpstreamNote,
 } from "@/lib/football-api";
 
 export const dynamic = "force-dynamic";
@@ -76,6 +77,7 @@ export async function GET(request: NextRequest) {
       source: "seed",
       apiConfigured: await isApiConfigured(),
       count: seedTips.length,
+      note: getUpstreamNote(),
     });
   } catch (error) {
     console.error("Fixtures API error:", error);
