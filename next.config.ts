@@ -6,9 +6,9 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  // Prisma 6 with engineType "client" + driver adapters generates a hashed
-  // client module that Turbopack/webpack cannot bundle. Keep these packages
-  // external so Node loads them from node_modules at runtime.
+  // The generated Prisma client (src/generated/prisma) imports the client runtime
+  // from node_modules — keep these packages external so the bundler does not try
+  // to package the native libSQL module.
   serverExternalPackages: [
     "@prisma/client",
     "@prisma/adapter-libsql",

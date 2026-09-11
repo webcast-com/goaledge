@@ -10,8 +10,13 @@
  *
  * Usage: npm run db:seed   (or: npx prisma db seed)
  */
-import { PrismaClient } from "@prisma/client";
-import { PrismaLibSQL } from "@prisma/adapter-libsql";
+// The client is committed under src/generated/prisma (see prisma/schema.prisma),
+// so the seed runs without the Prisma CLI — which needs to download a native
+// schema engine that is unreachable in the Base44/Arena sandbox. The generated
+// tree is TypeScript with explicit `.ts` imports; both Bun and Node >= 22.18
+// (type stripping) run it as-is. scripts/prisma-seed.sh picks the runtime.
+import { PrismaClient } from "../src/generated/prisma/client.ts";
+import { PrismaLibSql } from "@prisma/adapter-libsql"; // 7.x export is PrismaLibSql (not PrismaLibSQL)
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -22,7 +27,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, "..");
 const dbPath = path.join(projectRoot, "db", "custom.db");
 
-const adapter = new PrismaLibSQL({ url: `file:${dbPath}` });
+const adapter = new PrismaLibSql({ url: `file:${dbPath}` });
 const db = new PrismaClient({ adapter });
 
 function fmtDate(offsetDays, hour) {

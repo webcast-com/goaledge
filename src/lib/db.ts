@@ -1,4 +1,8 @@
-import { PrismaClient } from '@prisma/client'
+// The client is generated into the repository (prisma/schema.prisma →
+// src/generated/prisma) so the app never needs the Prisma CLI at runtime: the
+// CLI downloads a native schema engine from binaries.prisma.sh, which is blocked
+// in the Base44/Arena sandbox. Regenerate with `npm run db:generate`.
+import { PrismaClient } from '@/generated/prisma/client'
 import { PrismaLibSql } from '@prisma/adapter-libsql'
 
 const globalForPrisma = globalThis as unknown as {

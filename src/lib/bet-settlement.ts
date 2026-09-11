@@ -10,7 +10,7 @@
  *   - mix of won + void       → bet partial
  */
 
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@/generated/prisma/client";
 
 interface BetLeg {
   tipId: string;

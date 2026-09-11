@@ -6,16 +6,17 @@
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
     "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
-    "postinstall": "prisma generate",
+    "postinstall": "sh scripts/prisma.sh generate",
     "lint": "eslint .",
     "audit:contrast": "node scripts/contrast-audit.mjs",
     "audit:contrast:dark": "node scripts/contrast-audit.mjs --mode=dark",
     "test": "vitest run",
-    "db:push": "prisma db push",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:reset": "prisma migrate reset",
-    "db:seed": "prisma db seed"
+    "db:push": "sh scripts/prisma.sh push",
+    "db:generate": "sh scripts/prisma.sh generate",
+    "db:migrate": "sh scripts/prisma.sh migrate",
+    "db:reset": "sh scripts/prisma.sh reset",
+    "db:seed": "sh scripts/prisma.sh seed",
+    "db:status": "sh scripts/prisma.sh status"
   },
 
   "dependencies": {

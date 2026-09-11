@@ -11,7 +11,7 @@
  * existing premium logic (check-premium, Payment.expiresAt) understands.
  */
 
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@/generated/prisma/client";
 
 export const REFERRER_REWARD_DAYS = 7;
 export const REFEREE_BONUS_DAYS = 2;

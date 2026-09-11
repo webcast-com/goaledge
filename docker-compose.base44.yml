@@ -20,5 +20,5 @@ services:
     env_file:
       - ./.env.base44-defaults
       - /run/base44/app.env
-    command: sh -c "bun install && bunx prisma generate && bun run db:push && bun run db:seed && bunx next dev --webpack -p 3000"
+    command: sh -c "bun install && bun run db:generate && bun run db:push && bun run db:seed && bunx next dev --webpack -p 3000"
     restart: unless-stopped

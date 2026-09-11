@@ -55,7 +55,7 @@ npm run dev          # http://localhost:3000
 
 | Variable                  | Required | Purpose                                                        |
 | ------------------------- | -------- | -------------------------------------------------------------- |
-| `DATABASE_URL`            | ✅       | SQLite path (default `file:../db/custom.db`)                   |
+| `DATABASE_URL`            | ✅       | SQLite path (default `file:./db/custom.db`; a non-`file:` URL is ignored — the app falls back to the bundled DB) |
 | `PAYSTACK_SECRET_KEY`     | ❌       | Real Paystack charges; **absent = demo checkout**              |
 | `NEXT_PUBLIC_PAYSTACK_KEY`| ❌       | Paystack inline popup in the browser (needs secret too)        |
 | `FOOTBALL_API_KEY`        | ❌       | football-data.org key (or save it in Admin → API Key panel — **a saved key wins over this variable**) |
@@ -72,8 +72,10 @@ npm run dev          # http://localhost:3000
 | `npm run start`   | Serve the standalone build (`bun .next/standalone/server.js`) |
 | `npm run lint`    | ESLint                                             |
 | `npm test`        | Vitest unit tests (`src/**/*.test.ts`)             |
-| `npm run db:push` | Sync Prisma schema to the database                 |
-| `npm run db:seed` | Seed tips (idempotent)                             |
+| `npm run db:generate` | (Re)generate the Prisma client into `src/generated/prisma` |
+| `npm run db:push` | Sync Prisma schema to the database (skipped with a warning when the CLI has no engine) |
+| `npm run db:seed` | Seed tips (idempotent; needs Bun or Node ≥ 22.18)  |
+| `npm run db:status` | Print CLI/engine/client/database status          |
 | `npm run db:reset`| Drop & recreate the database                       |
 
 ## API routes
@@ -143,6 +145,30 @@ Two gotchas that bit this app:
    `SCHEDULED` to `TIMED` as soon as its kick-off time is confirmed, and v4 treats
    `dateTo` as *exclusive*. The client now requests a date window with no status filter
    and keeps `SCHEDULED` + `TIMED` locally.
+
+## Prisma troubleshooting
+
+The Prisma CLI downloads a native `schema-engine` from `binaries.prisma.sh` **before running any
+command** — that host is blocked in sandboxed/air-gapped environments, which used to abort
+`bun install` (postinstall), the Docker boot chain and every `db:*` script.
+
+```bash
+npm run db:status        # CLI, engine download, generated client, database, runtime
+```
+
+| Symptom | Meaning / fix |
+| ------- | ------------- |
+| `request to https://binaries.prisma.sh/... failed` | no engine download possible — harmless now: the client is committed in `src/generated/prisma` and the app runs from it |
+| `prisma generate` fails | `npm run db:generate` falls back to a local no-op engine (generation reads the schema with prisma-schema-wasm); the committed client is used if even that fails |
+| `prisma db push` fails | `npm run db:push` warns and continues — `db/custom.db` is committed with the full schema. Run `db:push` from a networked machine after schema changes |
+| `P2038 — Missing configured driver adapter` | a bare `new PrismaClient()` — always pass the `PrismaLibSql` adapter (see `src/lib/db.ts`) |
+| Seed crashes with `Export named 'PrismaLibSQL' not found` | the adapter exports `PrismaLibSql` (casing) |
+| `DATABASE_URL` warning on every query | set `DATABASE_URL="file:./db/custom.db"` — the schema is SQLite, a Postgres URL cannot work |
+
+Why the client is committed: it keeps the app runnable with no CLI, no engine binaries and no
+network (`src/generated/prisma` is ~700 KB of TypeScript; `importFileExtension = "ts"` makes it
+loadable by Bun and Node ≥ 22.18 without a bundler). Regenerate after editing `prisma/schema.prisma`
+with `npm run db:generate` and commit the result.
 
 ## Authentication
 

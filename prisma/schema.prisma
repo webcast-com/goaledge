@@ -1,9 +1,20 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+// Client code is generated into the repository (src/generated/prisma) so the app
+// can boot without running the Prisma CLI: the CLI downloads a native
+// `schema-engine` from binaries.prisma.sh, which is blocked in the Base44/Arena
+// sandbox. The generated tree is plain TypeScript that only needs the
+// `@prisma/client` runtime (driver-adapter / WASM, no native engines).
+// Regenerate with: node scripts/prisma-prepare.mjs (or `npm run db:generate`).
 generator client {
-  provider        = "prisma-client-js"
-  engineType      = "client"
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  runtime             = "nodejs"
+  // Emit explicit `.ts` specifiers in the generated imports: Node (>=22.18
+  // type-stripping) and Bun then resolve the tree without a bundler, which keeps
+  // scripts like prisma/seed.mjs runnable straight from the repo.
+  importFileExtension = "ts"
 }
 
 datasource db {

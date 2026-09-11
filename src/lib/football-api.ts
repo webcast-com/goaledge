@@ -264,6 +264,11 @@ async function requestUpstream(url: string): Promise<UpstreamResult> {
         attempt.ms = Date.now() - started;
         attempt.status = res.status;
         attempt.ok = res.ok;
+        if (!res.ok && [401, 403, 429].includes(res.status)) {
+          // The request was rejected upstream — it did not consume the free-tier
+          // quota, so don't make the next call wait out the 6.1s pacing window.
+          lastRequestTime = 0;
+        }
         if (!res.ok) {
           attempt.error = await shortBody(res);
           console.warn(
@@ -275,6 +280,7 @@ async function requestUpstream(url: string): Promise<UpstreamResult> {
       } catch (err) {
         attempt.ms = Date.now() - started;
         attempt.error = describeError(err);
+        lastRequestTime = 0; // nothing reached the API — nothing to pace against
         rememberAttempt(attempt);
         console.warn(`[football-api] request to ${url} failed: ${attempt.error}`);
         resolve({ res: null, attempt });
@@ -639,14 +645,18 @@ export async function getAllStandings(): Promise<LeagueStandings[]> {
   const codes = ["PL", "PD", "BL1", "SA", "FL1"];
   const results: LeagueStandings[] = [];
 
-  const promises = codes.map(async (code) => {
-    const s = await getStandings(code);
-    return s;
-  });
-
-  const standings = await Promise.all(promises);
-  for (const s of standings) {
-    if (s) results.push(s);
+  for (const code of codes) {
+    // Stop as soon as the API is clearly unreachable: a blocked network / bad key
+    // fails every league identically, and one failed request per league used to
+    // stack up to ~30s of latency before the route fell back to seed data.
+    if (results.length === 0 && code !== codes[0]) {
+      const last = getLastUpstreamAttempt();
+      if (last && !last.ok && (last.status === null || last.status === 401 || last.status === 429)) {
+        break;
+      }
+    }
+    const standings = await getStandings(code);
+    if (standings) results.push(standings);
   }
 
   return results;

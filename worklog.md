@@ -1718,3 +1718,47 @@ Stage Summary:
   (plus the table's hardcoded fallback hiding that it was seed data all along).
 - Report: FOOTBALL-API-DIAGNOSIS.md — run `node scripts/football-api-check.mjs` or
   `curl localhost:3000/api/diagnostics/football?probe=1` in the deployed container to confirm.
+
+---
+Task ID: 16
+Agent: Arena agent
+Task: Fix "Prisma 7 is failing" (blocked engine download) without an RC migration
+
+Work Log:
+- Reproduced the failure: `prisma generate`, `prisma db push` — and even `prisma --version` —
+  die in this sandbox with "request to https://binaries.prisma.sh/all_commits/0edf323e.../
+  schema-engine.gz.sha256 failed". Node/npm have network here (registry.npmjs.org works), only
+  that host is blocked, so the whole boot chain (postinstall → compose) aborted before `next dev`.
+- Verified the workaround is sound: with `PRISMA_SCHEMA_ENGINE_BINARY` pointing at a no-op script,
+  `prisma generate` completes in ~150ms — generation reads the schema through prisma-schema-wasm
+  and never executes the engine binary.
+- Switched prisma/schema.prisma to the modern `prisma-client` generator with
+  `output = "../src/generated/prisma"` and `importFileExtension = "ts"`; committed the generated
+  client (18 files, 700 KB). The app imports it via `@/generated/prisma/client`, so the runtime is
+  just the @prisma/client WASM/driver-adapter stack — no native engines needed.
+- Added scripts/prisma.sh (generate | push | seed | status): tolerant of the blocked download
+  (no-op engine retry + committed-client verification for generate, warn-and-continue for push),
+  picks Bun or Node for the seed.
+- Rewired package.json (postinstall, db:generate, db:push, db:seed, db:status), the compose boot
+  chain (`bun run db:generate|db:push|db:seed` instead of `bunx prisma generate`) and
+  prisma.config.ts (seed moved to migrations.seed — the old top-level key is not part of the 7.x
+  config type; an absolute file: URL so the CLI stops creating prisma/db/custom.db).
+- Fixed a second, independent breakage: prisma/seed.mjs imported `PrismaLibSQL`, which
+  @prisma/adapter-libsql@7 does not export (it is `PrismaLibSql`) — the seed could never run.
+- Fixed the football-api 30s stall when the API is unreachable: getAllStandings() now stops after
+  the first network/auth/rate-limit failure instead of querying all five leagues through the
+  6.1s rate-limit pacing, and rejected requests (401/403/429) or network failures no longer make
+  the next request wait. /api/standings went from 31.9s to 3.2s on a blocked network.
+- Set DATABASE_URL in .env / .env.example to file:./db/custom.db (the old Prisma Postgres URL is
+  unusable with the sqlite datasource and logged a warning on every query).
+- Verification: `bun prisma/seed.mjs` seeds successfully offline (then restored the committed DB);
+  `bun` smoke test through src/lib/db.ts returns tips=93/upcoming=83/users=3; `next dev --webpack`
+  boots and serves / (200), /api/tips (12 tips, source database, upstream note), /api/admin/stats
+  (DB reads), /api/standings (seed fallback) with zero Prisma errors; eslint 0 errors; tsc has no
+  new errors; 50 vitest tests pass.
+
+Stage Summary:
+- Prisma 7 now works in the blocked environment: install, generate, push, seed and the app itself.
+- Prisma "8" (8.0.0-rc.13) is the new unified Prisma CLI / Prisma Next RC — no `generate`, `db push`
+  or stable @prisma/client 8.x — so upgrading is a data-layer migration, not a version bump.
+  Documented and left for an explicit decision.
