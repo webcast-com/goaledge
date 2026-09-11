@@ -16,19 +16,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Check user record
-    const user = await db.user.findUnique({
-      where: { email },
-    });
+    const user = await db.orm.User.where({ email }).first();
 
     // Check for active payments with future expiry
-    const activePayment = await db.payment.findFirst({
-      where: {
-        email,
-        status: "completed",
-        expiresAt: { gte: new Date() },
-      },
-      orderBy: { expiresAt: "desc" },
-    });
+    const activePayment = await db.orm.Payment.where({ email, status: "completed" })
+      .where((pay) => pay.expiresAt.gte(new Date()))
+      .orderBy((pay) => pay.expiresAt.desc())
+      .first();
 
     const isPremium = user?.plan === "premium" || !!activePayment;
     let expiresAt: string | null = null;
@@ -37,16 +31,12 @@ export async function GET(request: NextRequest) {
       expiresAt = activePayment.expiresAt.toISOString();
     } else if (user?.plan === "premium" && !activePayment) {
       // User has premium plan but no active payment — check if they have any completed payment
-      const lastPayment = await db.payment.findFirst({
-        where: { email, status: "completed" },
-        orderBy: { createdAt: "desc" },
-      });
+      const lastPayment = await db.orm.Payment.where({ email, status: "completed" })
+        .orderBy((pay) => pay.createdAt.desc())
+        .first();
       if (lastPayment?.expiresAt && lastPayment.expiresAt < new Date()) {
         // Premium has expired — downgrade user
-        await db.user.update({
-          where: { id: user.id },
-          data: { plan: "free" },
-        });
+        await db.orm.User.where({ id: user.id }).update({ plan: "free" });
         return NextResponse.json({
           isPremium: false,
           plan: "free",

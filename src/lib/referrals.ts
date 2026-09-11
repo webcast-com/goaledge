@@ -11,7 +11,8 @@
  * existing premium logic (check-premium, Payment.expiresAt) understands.
  */
 
-import type { PrismaClient } from "@prisma/client";
+import type { DbClient } from "@/lib/db";
+import { newId } from "@/lib/ids";
 
 export const REFERRER_REWARD_DAYS = 7;
 export const REFEREE_BONUS_DAYS = 2;
@@ -44,32 +45,31 @@ function daysFromNow(days: number, base: Date = new Date()): Date {
  * expiry (so it never shortens an existing subscription).
  */
 async function grantPremiumDays(
-  db: PrismaClient,
+  db: DbClient,
   userId: string,
   email: string,
   days: number,
   plan: string,
   referencePrefix: string
 ) {
-  const active = await db.payment.findFirst({
-    where: { userId, status: "completed", expiresAt: { gte: new Date() } },
-    orderBy: { expiresAt: "desc" },
-  });
+  const active = await db.orm.Payment.where({ userId, status: "completed" })
+    .where((pay) => pay.expiresAt.gte(new Date()))
+    .orderBy((pay) => pay.expiresAt.desc())
+    .first();
   const base = active?.expiresAt ?? new Date();
   const reference = `${referencePrefix}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 
-  await db.payment.create({
-    data: {
-      email,
-      userId,
-      amount: 0,
-      plan, // "referral_reward" | "referral_bonus"
-      reference,
-      status: "completed",
-      channel: "referral",
-      paidAt: new Date(),
-      expiresAt: daysFromNow(days, base),
-    },
+  await db.orm.Payment.create({
+    id: newId(),
+    email,
+    userId,
+    amount: 0,
+    plan, // "referral_reward" | "referral_bonus"
+    reference,
+    status: "completed",
+    channel: "referral",
+    paidAt: new Date(),
+    expiresAt: daysFromNow(days, base),
   });
 }
 
@@ -80,7 +80,7 @@ async function grantPremiumDays(
  * Returns { applied, referrerName?, bonusDays } — never throws for bad codes.
  */
 export async function applyReferralOnSignup(
-  db: PrismaClient,
+  db: DbClient,
   newUserId: string,
   newUserEmail: string,
   rawCode?: string | null
@@ -88,21 +88,20 @@ export async function applyReferralOnSignup(
   const code = rawCode ? normalizeCode(rawCode) : "";
   if (!code) return { applied: false, bonusDays: 0 };
 
-  const referrer = await db.user.findUnique({ where: { referralCode: code } });
+  const referrer = await db.orm.User.where({ referralCode: code }).first();
   if (!referrer || referrer.id === newUserId) {
     return { applied: false, bonusDays: 0 };
   }
 
-  const existing = await db.referral.findUnique({ where: { referredId: newUserId } });
+  const existing = await db.orm.Referral.where({ referredId: newUserId }).first();
   if (existing) return { applied: false, bonusDays: 0 };
 
-  await db.referral.create({
-    data: {
-      code,
-      referrerId: referrer.id,
-      referredId: newUserId,
-      status: "pending",
-    },
+  await db.orm.Referral.create({
+    id: newId(),
+    code,
+    referrerId: referrer.id,
+    referredId: newUserId,
+    status: "pending",
   });
 
   try {
@@ -127,16 +126,15 @@ export async function applyReferralOnSignup(
  * transition makes it idempotent.
  */
 export async function rewardReferrerForPayment(
-  db: PrismaClient,
+  db: DbClient,
   email: string
 ): Promise<{ rewarded: boolean; rewardDays: number }> {
-  const user = await db.user.findUnique({ where: { email } });
+  const user = await db.orm.User.where({ email }).first();
   if (!user) return { rewarded: false, rewardDays: 0 };
 
-  const referral = await db.referral.findUnique({
-    where: { referredId: user.id },
-    include: { referrer: { select: { id: true, email: true } } },
-  });
+  const referral = await db.orm.Referral.where({ referredId: user.id })
+    .include("referrer", (r) => r.select("id", "email"))
+    .first();
 
   if (!referral || referral.status !== "pending") {
     return { rewarded: false, rewardDays: 0 };
@@ -154,9 +152,10 @@ export async function rewardReferrerForPayment(
     "REFREWARD"
   );
 
-  await db.referral.update({
-    where: { id: referral.id },
-    data: { status: "rewarded", qualifiedAt: new Date(), rewardedAt: new Date() },
+  await db.orm.Referral.where({ id: referral.id }).update({
+    status: "rewarded",
+    qualifiedAt: new Date(),
+    rewardedAt: new Date(),
   });
 
   return { rewarded: true, rewardDays };

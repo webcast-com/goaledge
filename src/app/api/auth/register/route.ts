@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { db } from "@/lib/db";
+import { newId } from "@/lib/ids";
 import {
   createSession,
   findUserByEmail,
@@ -72,27 +73,25 @@ export async function POST(request: Request) {
     // Generate a unique referral code for the new user
     let code = generateReferralCode();
     for (let attempt = 0; attempt < 5; attempt++) {
-      const clash = await db.user.findUnique({ where: { referralCode: code } });
+      const clash = await db.orm.User.where({ referralCode: code }).first();
       if (!clash) break;
       code = generateReferralCode();
     }
 
     // Create user
-    const user = await db.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        referralCode: code,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        plan: true,
-        referralCode: true,
-        createdAt: true,
-      },
+    const user = await db.orm.User.select(
+      "id",
+      "email",
+      "name",
+      "plan",
+      "referralCode",
+      "createdAt",
+    ).create({
+      id: newId(),
+      name,
+      email,
+      password: hashedPassword,
+      referralCode: code,
     });
 
     // Apply referral code if provided (links accounts + grants bonus days)

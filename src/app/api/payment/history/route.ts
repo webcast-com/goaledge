@@ -15,11 +15,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const payments = await db.payment.findMany({
-      where: { email },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    });
+    const payments = await db.orm.Payment.where({ email })
+      .orderBy((pay) => pay.createdAt.desc())
+      .limit(20)
+      .all();
 
     // Summary stats
     const totalSpent = payments

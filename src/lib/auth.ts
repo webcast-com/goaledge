@@ -64,13 +64,7 @@ export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-const userSelect = {
-  id: true,
-  email: true,
-  name: true,
-  image: true,
-  plan: true,
-} as const;
+const userFields = ["id", "email", "name", "image", "plan"] as const;
 
 type DbUser = {
   id: string;
@@ -108,30 +102,24 @@ export async function findUserByEmail(
   const normalized = normalizeEmail(trimmed);
   if (!normalized) return null;
 
-  const exact = await db.user.findUnique({
-    where: { email: normalized },
-    select: userSelect,
-  });
+  const exact = await db.orm.User.where({ email: normalized })
+    .select(...userFields)
+    .first();
   if (exact) return exact;
 
   if (trimmed !== normalized) {
-    const asTyped = await db.user.findUnique({
-      where: { email: trimmed },
-      select: userSelect,
-    });
+    const asTyped = await db.orm.User.where({ email: trimmed })
+      .select(...userFields)
+      .first();
     if (asTyped) return asTyped;
   }
 
-  const rows = await db.$queryRaw<Array<{ id: string }>>`
-    SELECT id FROM User WHERE LOWER(email) = ${normalized} LIMIT 1
-  `;
-  const legacyId = rows[0]?.id;
-  if (!legacyId) return null;
-
-  return db.user.findUnique({
-    where: { id: legacyId },
-    select: userSelect,
-  });
+  // Legacy rows may differ in case: SQLite's LIKE is case-insensitive for
+  // ASCII, matching the LOWER(email) = LOWER(?) lookup this replaces.
+  const folded = await db.orm.User.where((u) => u.email.like(normalized))
+    .select(...userFields)
+    .first();
+  return folded ?? null;
 }
 
 /**
@@ -146,10 +134,9 @@ export async function authenticateWithPassword(
   const user = await findUserByEmail(email);
   if (!user) return { error: "Invalid email or password" };
 
-  const passwordRow = await db.user.findUnique({
-    where: { id: user.id },
-    select: { password: true },
-  });
+  const passwordRow = await db.orm.User.where({ id: user.id })
+    .select("password")
+    .first();
   if (!passwordRow?.password) {
     return { error: "Invalid email or password" };
   }
@@ -286,10 +273,9 @@ export async function getSessionUser(
   if (!claims) return null;
 
   try {
-    const user = await db.user.findUnique({
-      where: { id: claims.sub },
-      select: userSelect,
-    });
+    const user = await db.orm.User.where({ id: claims.sub })
+      .select(...userFields)
+      .first();
     if (!user) return null;
     return toSessionUser(user);
   } catch (error) {

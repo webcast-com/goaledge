@@ -11,6 +11,7 @@ import { TipCardSkeleton } from "../TipCardSkeleton";
 export function TipsSection({
   loading,
   apiStatus,
+  apiNote,
   tipsCount,
   selectedDate,
   leagues,
@@ -38,6 +39,7 @@ export function TipsSection({
 }: {
   loading: boolean;
   apiStatus: ApiStatus;
+  apiNote?: string | null;
   tipsCount: number;
   selectedDate: number;
   leagues: string[];
@@ -105,9 +107,18 @@ export function TipsSection({
                   Live Data · {tipsCount} matches from football-data.org
                 </span>
               )}
-              {apiStatus === "offline" && (
-                <span className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                  Demo Data · <a href="https://www.football-data.org/client/register" target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-800">Get free API key</a>
+              {apiStatus !== "live" && (
+                <span
+                  className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                  title={apiNote ?? "Live fixtures unavailable — showing sample tips"}
+                >
+                  Demo Data{apiNote ? " ⓘ" : ""}
+                  {apiStatus === "offline" && (
+                    <>
+                      {" · "}
+                      <a href="https://www.football-data.org/client/register" target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-800">Get free API key</a>
+                    </>
+                  )}
                 </span>
               )}
             </p>

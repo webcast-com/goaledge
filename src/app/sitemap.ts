@@ -15,13 +15,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Include shared bet slip pages
   try {
-    const slips = await db.sharedSlip.findMany({
-      select: { slug: true, updatedAt: true },
-      take: 200,
-    });
+    const slips = await db.orm.SharedSlip.select("slug", "createdAt").limit(200).all();
     const slipRoutes: MetadataRoute.Sitemap = slips.map((s) => ({
       url: `${baseUrl}/slip/${s.slug}`,
-      lastModified: s.updatedAt,
+      lastModified: s.createdAt,
       changeFrequency: "weekly",
       priority: 0.6,
     }));

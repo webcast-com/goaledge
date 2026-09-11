@@ -28,40 +28,32 @@ export async function POST(request: NextRequest) {
       const data = event.data;
       const reference = data.reference;
 
-      const payment = await db.payment.findUnique({
-        where: { reference },
-      });
+      const payment = await db.orm.Payment.where({ reference }).first();
 
       if (payment && payment.status === "pending") {
         const now = new Date();
 
-        await db.payment.update({
-          where: { reference },
-          data: {
-            status: "completed",
-            paidAt: new Date(data.paid_at),
-            channel: data.channel,
-            updatedAt: now,
-          },
+        await db.orm.Payment.where({ reference }).update({
+          status: "completed",
+          paidAt: new Date(data.paid_at),
+          channel: data.channel,
+          updatedAt: now,
         });
 
         // Upgrade user to premium
         if (payment.userId) {
-          await db.user.update({
-            where: { id: payment.userId },
-            data: { plan: "premium", updatedAt: now },
+          await db.orm.User.where({ id: payment.userId }).update({
+            plan: "premium",
+            updatedAt: now,
           });
         } else {
-          const user = await db.user.findUnique({ where: { email: payment.email } });
+          const user = await db.orm.User.where({ email: payment.email }).first();
           if (user) {
-            await db.user.update({
-              where: { id: user.id },
-              data: { plan: "premium", updatedAt: now },
+            await db.orm.User.where({ id: user.id }).update({
+              plan: "premium",
+              updatedAt: now,
             });
-            await db.payment.update({
-              where: { reference },
-              data: { userId: user.id },
-            });
+            await db.orm.Payment.where({ reference }).update({ userId: user.id });
           }
         }
 
@@ -84,10 +76,9 @@ export async function POST(request: NextRequest) {
     // Handle charge.failed event
     if (event.event === "charge.failed") {
       const reference = event.data.reference;
-      await db.payment.update({
-        where: { reference },
-        data: { status: "failed", updatedAt: new Date() },
-      }).catch(() => {});
+      await db.orm.Payment.where({ reference })
+        .update({ status: "failed", updatedAt: new Date() })
+        .catch(() => {});
     }
 
     return NextResponse.json({ received: true });

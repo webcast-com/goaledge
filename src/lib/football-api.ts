@@ -12,24 +12,34 @@ const BASE_URL = "https://api.football-data.org/v4";
 // ── Dynamic API Key ──────────────────────────────────────────────────────
 let _dynamicApiKey: string | null = null;
 let _keyLoaded = false;
+let _keySource: "database" | "env" | "none" = "none";
 
-/** Get the effective API key (checks DB first, then env) */
+/**
+ * Get the effective API key.
+ *
+ * A key saved from the Admin → API Key panel lives in the DB and **wins over
+ * FOOTBALL_API_KEY in .env**. That surprises people who rotate the env var and
+ * still see the old key being used — `getApiKeyInfo()` reports which one is live.
+ */
 export async function getApiKey(): Promise<string> {
-  // If we already loaded from DB this process, use that
+  // If we already loaded a key this process, use that
   if (_keyLoaded && _dynamicApiKey !== null) return _dynamicApiKey;
 
-  // Try to load from database
+  // Try to load from database first
   try {
-    const setting = await db.appSetting.findUnique({
-      where: { key: "football_api_key" },
-    });
+    const setting = await db.orm.AppSetting.first({ key: "football_api_key" });
     if (setting?.value) {
       _dynamicApiKey = setting.value;
       _keyLoaded = true;
-      return _dynamicApiKey;
+      _keySource = "database";
+      return setting.value;
     }
-  } catch {
-    // DB not ready — fall through to env
+  } catch (err) {
+    // DB not ready — fall through to env. Log it: without this a broken DB read
+    // silently switches the app to a different (possibly stale) key.
+    console.warn(
+      `[football-api] could not read the stored API key (${describeError(err)}) — falling back to FOOTBALL_API_KEY`
+    );
   }
 
   // Fall back to env
@@ -37,14 +47,37 @@ export async function getApiKey(): Promise<string> {
   if (envKey) {
     _dynamicApiKey = envKey;
     _keyLoaded = true;
+    _keySource = "env";
+  } else {
+    _keySource = "none";
   }
   return _dynamicApiKey || "";
+}
+
+/** Diagnostics: where the key in use comes from (never the key itself). */
+export function getApiKeyInfo() {
+  const envKey = process.env.FOOTBALL_API_KEY || "";
+  return {
+    source: _keySource,
+    configured: !!_dynamicApiKey,
+    suffix: _dynamicApiKey ? _dynamicApiKey.slice(-4) : null,
+    envConfigured: !!envKey,
+    envSuffix: envKey ? envKey.slice(-4) : null,
+    /**
+     * true when a DB-saved key different from .env is in use, i.e. editing
+     * FOOTBALL_API_KEY in .env (or the platform secrets) has no effect until the
+     * stored key is removed (DELETE /api/settings/api-key).
+     */
+    envShadowed:
+      !!envKey && _keySource === "database" && !!_dynamicApiKey && _dynamicApiKey !== envKey,
+  };
 }
 
 /** Force-update the cached API key (e.g., after saving a new one) */
 export async function refreshApiKey(): Promise<string> {
   _keyLoaded = false;
   _dynamicApiKey = null;
+  _keySource = "none";
   return getApiKey();
 }
 
@@ -52,6 +85,7 @@ export async function refreshApiKey(): Promise<string> {
 export function clearApiKey(): void {
   _dynamicApiKey = null;
   _keyLoaded = false;
+  _keySource = "none";
   // Also clear all caches so stale data isn't served
   cache.clear();
 }
@@ -81,42 +115,173 @@ function setCache<T>(key: string, data: T, ttl = DEFAULT_TTL): void {
   cache.set(key, { data, expiresAt: Date.now() + ttl });
 }
 
+/** Diagnostics: what the in-memory cache currently holds. */
+export function getCacheSnapshot() {
+  return [...cache.entries()].map(([key, entry]) => ({
+    key,
+    items: Array.isArray(entry.data) ? entry.data.length : 1,
+    expiresInSeconds: Math.max(0, Math.round((entry.expiresAt - Date.now()) / 1000)),
+  }));
+}
+
+// ── Upstream diagnostics ────────────────────────────────────────────────
+/**
+ * Every call the app makes to football-data.org is recorded here. Previously a
+ * failed call was collapsed into `null` and silently replaced by seed data, so
+ * "no matches" could mean *anything*: no key, network blocked, 403 (plan does
+ * not cover the resource), 429 (rate limit) or simply an empty window.
+ */
+export interface UpstreamAttempt {
+  url: string;
+  /** ISO timestamp of when the request finished */
+  at: string;
+  ms: number;
+  /** HTTP status, or null when no response arrived (DNS/TLS/timeout/offline) */
+  status: number | null;
+  ok: boolean;
+  /** how many matches / table rows the caller parsed out of the response */
+  items?: number;
+  /** short error message for failed calls */
+  error?: string;
+}
+
+const attempts: UpstreamAttempt[] = [];
+const MAX_REMEMBERED_ATTEMPTS = 25;
+
+function rememberAttempt(attempt: UpstreamAttempt): void {
+  attempts.push(attempt);
+  if (attempts.length > MAX_REMEMBERED_ATTEMPTS) {
+    attempts.splice(0, attempts.length - MAX_REMEMBERED_ATTEMPTS);
+  }
+}
+
+/** Diagnostics: every upstream call made by this process (oldest first). */
+export function getUpstreamAttempts(): UpstreamAttempt[] {
+  return attempts.map((a) => ({ ...a }));
+}
+
+export function getLastUpstreamAttempt(): UpstreamAttempt | null {
+  const last = attempts[attempts.length - 1];
+  return last ? { ...last } : null;
+}
+
+/**
+ * One-line reason live data is missing — meant for API responses and UI tooltips:
+ * "network error — fetch failed: …" or "HTTP 403 — The resource … is restricted".
+ */
+export function getUpstreamNote(): string | null {
+  const last = attempts[attempts.length - 1];
+  if (!last || last.ok) return null;
+  if (last.status === null) return `network error — ${last.error ?? "request failed"}`;
+  return `HTTP ${last.status}${last.error ? ` — ${last.error}` : ""}`;
+}
+
+/** Attach the number of parsed items to the most recent attempt for a URL. */
+function recordItems(url: string, items: number): void {
+  for (let i = attempts.length - 1; i >= 0; i--) {
+    if (attempts[i].url === url) {
+      attempts[i].items = items;
+      return;
+    }
+  }
+}
+
+function describeError(err: unknown): string {
+  if (err instanceof Error) {
+    // "fetch failed" hides the real cause (certificate error, ECONNRESET, …)
+    const cause = (err as { cause?: unknown }).cause;
+    if (cause instanceof Error && cause.message && cause.message !== err.message) {
+      return `${err.message}: ${cause.message}`;
+    }
+    return err.message;
+  }
+  return String(err);
+}
+
+/** Read (a slice of) a failed response body without throwing. */
+async function shortBody(res: Response): Promise<string> {
+  try {
+    return (await res.text()).slice(0, 200).replace(/\s+/g, " ").trim();
+  } catch {
+    return "";
+  }
+}
+
 // ── Rate Limiter ────────────────────────────────────────────────────────
 const requestQueue: Array<() => void> = [];
 let isProcessing = false;
-const MIN_INTERVAL = 6100; // ~10 requests per minute (a bit under the limit)
+// ~10 requests per minute (a bit under the free-tier limit). Override when the
+// plan allows more (e.g. FOOTBALL_API_MIN_INTERVAL_MS=3000 for 20 req/min).
+const parsedInterval = Number(process.env.FOOTBALL_API_MIN_INTERVAL_MS ?? 6100);
+const MIN_INTERVAL = Number.isFinite(parsedInterval) ? Math.max(0, parsedInterval) : 6100;
+const FETCH_TIMEOUT_MS = 15_000; // never let one hung request stall the queue forever
 let lastRequestTime = 0;
 
-async function rateLimitedFetch(url: string): Promise<Response | null> {
+interface UpstreamResult {
+  res: Response | null;
+  attempt: UpstreamAttempt | null;
+}
+
+async function requestUpstream(url: string): Promise<UpstreamResult> {
   const key = await getApiKey();
-  if (!key) return null;
+  if (!key) return { res: null, attempt: null };
 
   return new Promise((resolve) => {
     const execute = async () => {
+      const started = Date.now();
+      const attempt: UpstreamAttempt = {
+        url,
+        at: new Date().toISOString(),
+        ms: 0,
+        status: null,
+        ok: false,
+      };
+
       try {
-        const now = Date.now();
-        const waitTime = Math.max(0, MIN_INTERVAL - (now - lastRequestTime));
+        const waitTime = Math.max(0, MIN_INTERVAL - (Date.now() - lastRequestTime));
         if (waitTime > 0) await new Promise((r) => setTimeout(r, waitTime));
         lastRequestTime = Date.now();
 
-        const res = await fetch(url, {
+        const init: RequestInit = {
           headers: { "X-Auth-Token": key },
-          next: { revalidate: 0 },
-        });
+          signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+          cache: "no-store",
+        };
+
+        let res = await fetch(url, init);
 
         if (res.status === 429) {
-          // Rate limited — wait and retry once
+          // Rate limited — wait out the window and retry once
+          console.warn(
+            `[football-api] 429 from ${url} — waiting 60s before retrying (free tier allows 10 requests/minute)`
+          );
           await new Promise((r) => setTimeout(r, 60000));
-          const retry = await fetch(url, {
-            headers: { "X-Auth-Token": key },
-          });
-          resolve(retry.ok ? retry : null);
-          return;
+          res = await fetch(url, init);
         }
 
-        resolve(res.ok ? res : null);
-      } catch {
-        resolve(null);
+        attempt.ms = Date.now() - started;
+        attempt.status = res.status;
+        attempt.ok = res.ok;
+        if (!res.ok && [401, 403, 429].includes(res.status)) {
+          // The request was rejected upstream — it did not consume the free-tier
+          // quota, so don't make the next call wait out the 6.1s pacing window.
+          lastRequestTime = 0;
+        }
+        if (!res.ok) {
+          attempt.error = await shortBody(res);
+          console.warn(
+            `[football-api] ${res.status} from ${url}${attempt.error ? ` — ${attempt.error}` : ""}`
+          );
+        }
+        rememberAttempt(attempt);
+        resolve({ res: res.ok ? res : null, attempt });
+      } catch (err) {
+        attempt.ms = Date.now() - started;
+        attempt.error = describeError(err);
+        lastRequestTime = 0; // nothing reached the API — nothing to pace against
+        rememberAttempt(attempt);
+        console.warn(`[football-api] request to ${url} failed: ${attempt.error}`);
+        resolve({ res: null, attempt });
       }
     };
 
@@ -126,6 +291,11 @@ async function rateLimitedFetch(url: string): Promise<Response | null> {
       processQueue();
     }
   });
+}
+
+async function rateLimitedFetch(url: string): Promise<Response | null> {
+  const { res } = await requestUpstream(url);
+  return res;
 }
 
 async function processQueue() {
@@ -201,6 +371,34 @@ const LEAGUES: Record<string, { id: number; country: string; flag: string }> = {
   RSA: { id: 2030, country: "South Africa", flag: "🇿🇦" },
 };
 
+// ── Helpers ─────────────────────────────────────────────────────────────
+
+/**
+ * Statuses that mean "fixture not played yet".
+ *
+ * football-data.org flips a match from SCHEDULED to **TIMED** as soon as the
+ * exact kick-off date/time is confirmed (see the v4 status workflow). Asking for
+ * `?status=SCHEDULED` therefore hides every fixture whose kick-off time is
+ * already fixed — which is how "the API has no matches" happens while the
+ * standings endpoint (no status filter) keeps working.
+ */
+const UPCOMING_STATUSES = ["SCHEDULED", "TIMED"];
+
+function isUpcomingStatus(status: string): boolean {
+  return UPCOMING_STATUSES.includes(status);
+}
+
+/** v4 treats `dateTo` as exclusive, so offset by +1 day when covering a window. */
+function isoDate(offsetDays = 0): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + offsetDays);
+  return d.toISOString().split("T")[0];
+}
+
+function byKickoff(a: FootballMatch, b: FootballMatch): number {
+  return a.utcDate.localeCompare(b.utcDate);
+}
+
 // ── API Functions ───────────────────────────────────────────────────────
 
 export async function isApiConfigured(): Promise<boolean> {
@@ -255,18 +453,23 @@ export async function getUpcomingMatches(leagueCode: string, count = 10): Promis
   const league = LEAGUES[leagueCode];
   if (!league) return [];
 
-  const res = await rateLimitedFetch(
-    `${BASE_URL}/competitions/${league.id}/matches?status=SCHEDULED&limit=${count}`
-  );
+  // No `status=` filter on purpose — filtering on SCHEDULED alone would hide
+  // TIMED fixtures (kick-off time already confirmed). Filter locally instead.
+  const url = `${BASE_URL}/competitions/${league.id}/matches?dateFrom=${isoDate(0)}&dateTo=${isoDate(8)}`;
+  const res = await rateLimitedFetch(url);
+  if (!res) return [];
 
-  if (res) {
-    const data = await res.json();
-    const matches = parseMatches(data.matches || [], leagueCode);
-    setCache(cacheKey, matches, DEFAULT_TTL);
-    return matches;
-  }
+  const data = await res.json();
+  const matches = parseMatches((data.matches || []) as Record<string, unknown>[], leagueCode)
+    .filter((m) => isUpcomingStatus(m.status))
+    .sort(byKickoff)
+    .slice(0, count);
 
-  return [];
+  recordItems(url, matches.length);
+  // Only cache a non-empty result: caching `[]` would freeze the seed fallback
+  // in place for the whole TTL even after the API recovers.
+  if (matches.length > 0) setCache(cacheKey, matches, DEFAULT_TTL);
+  return matches;
 }
 
 /**
@@ -278,18 +481,10 @@ export async function getAllUpcomingMatches(maxPerLeague = 5): Promise<FootballM
   if (cached) return cached;
 
   const codes = ["PL", "PD", "BL1", "SA", "FL1", "CL"];
-  const allMatches: FootballMatch[] = [];
 
-  // Try fetching from all-matches endpoint first (single request)
-  const today = new Date();
-  const nextWeek = new Date(today);
-  nextWeek.setDate(today.getDate() + 7);
-  const dateFrom = today.toISOString().split("T")[0];
-  const dateTo = nextWeek.toISOString().split("T")[0];
-
-  const res = await rateLimitedFetch(
-    `${BASE_URL}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}&status=SCHEDULED`
-  );
+  // One request for the whole window (dateTo is exclusive → +8 days ≈ 7 days).
+  const url = `${BASE_URL}/matches?dateFrom=${isoDate(0)}&dateTo=${isoDate(8)}`;
+  const res = await rateLimitedFetch(url);
 
   if (res) {
     const data = await res.json();
@@ -298,18 +493,45 @@ export async function getAllUpcomingMatches(maxPerLeague = 5): Promise<FootballM
         const comp = m.competition as Record<string, string> | undefined;
         return comp && codes.includes(comp.code || "");
       })
-      .map((m: Record<string, unknown>) => parseMatch(m));
-    setCache(cacheKey, matches, DEFAULT_TTL);
-    return matches;
+      .map((m: Record<string, unknown>) => parseMatch(m))
+      .filter((m: FootballMatch) => isUpcomingStatus(m.status))
+      .sort(byKickoff);
+
+    recordItems(url, matches.length);
+    if (matches.length > 0) {
+      setCache(cacheKey, matches, DEFAULT_TTL);
+      return matches;
+    }
+    // The API answered and the window is genuinely empty (international break,
+    // off-season). Don't cache that — and don't hammer the rate limiter with
+    // per-league retries that can only find the same nothing.
+    return [];
   }
 
-  // Fallback: fetch per league
+  // The all-matches call failed. A missing key / blocked network / rate limit
+  // hits every league the same way — don't burn the free-tier budget on 6 more
+  // requests (6 s each) that are guaranteed to fail identically. A 403 is worth
+  // retrying per league though: the plan can allow competition-scoped matches
+  // while the cross-competition endpoint is restricted.
+  const last = getLastUpstreamAttempt();
+  if (!last || last.status === null || last.status === 401 || last.status === 429) {
+    return [];
+  }
+
+  // Fallback: fetch per league, with a hard time budget so one request can't
+  // sit in the queue for a minute while the page waits for its tips.
+  const FALLBACK_BUDGET_MS = 25_000;
+  const fallbackStarted = Date.now();
+  const allMatches: FootballMatch[] = [];
+
   for (const code of codes) {
+    if (Date.now() - fallbackStarted > FALLBACK_BUDGET_MS) break;
     const matches = await getUpcomingMatches(code, maxPerLeague);
     allMatches.push(...matches);
   }
+  allMatches.sort(byKickoff);
 
-  setCache(cacheKey, allMatches, DEFAULT_TTL);
+  if (allMatches.length > 0) setCache(cacheKey, allMatches, DEFAULT_TTL);
   return allMatches;
 }
 
@@ -321,10 +543,13 @@ export async function getLiveMatches(): Promise<FootballMatch[]> {
   const cached = getCached<FootballMatch[]>(cacheKey);
   if (cached) return cached;
 
-  const res = await rateLimitedFetch(`${BASE_URL}/matches?status=IN_PLAY,PAUSED`);
+  // Short cache only: an empty live board must be re-checked quickly.
+  const url = `${BASE_URL}/matches?status=IN_PLAY,PAUSED`;
+  const res = await rateLimitedFetch(url);
   if (res) {
     const data = await res.json();
     const matches = (data.matches || []).map((m: Record<string, unknown>) => parseMatch(m));
+    recordItems(url, matches.length);
     setCache(cacheKey, matches, LIVE_TTL);
     return matches;
   }
@@ -340,17 +565,21 @@ export async function getFinishedMatches(dateFrom?: string, dateTo?: string): Pr
   const cached = getCached<FootballMatch[]>(cacheKey);
   if (cached) return cached;
 
-  const today = dateFrom || new Date().toISOString().split("T")[0];
-  const yesterday = dateTo || today;
+  // dateTo is exclusive in v4 — default to the day after `dateFrom` so a
+  // single-day request actually covers that day.
+  const from = dateFrom || isoDate(0);
+  const to = dateTo || isoDate(1);
 
-  const res = await rateLimitedFetch(
-    `${BASE_URL}/matches?dateFrom=${today}&dateTo=${yesterday}&status=FINISHED`
-  );
+  const url = `${BASE_URL}/matches?dateFrom=${from}&dateTo=${to}&status=FINISHED`;
+  const res = await rateLimitedFetch(url);
 
   if (res) {
     const data = await res.json();
-    const matches = (data.matches || []).map((m: Record<string, unknown>) => parseMatch(m));
-    setCache(cacheKey, matches, 15 * 60 * 1000); // 15 min
+    const matches = (data.matches || [])
+      .map((m: Record<string, unknown>) => parseMatch(m))
+      .sort(byKickoff);
+    recordItems(url, matches.length);
+    if (matches.length > 0) setCache(cacheKey, matches, 15 * 60 * 1000); // 15 min
     return matches;
   }
 
@@ -368,9 +597,8 @@ export async function getStandings(leagueCode: string): Promise<LeagueStandings 
   const league = LEAGUES[leagueCode];
   if (!league) return null;
 
-  const res = await rateLimitedFetch(
-    `${BASE_URL}/competitions/${league.id}/standings`
-  );
+  const url = `${BASE_URL}/competitions/${league.id}/standings`;
+  const res = await rateLimitedFetch(url);
 
   if (res) {
     const data = await res.json();
@@ -400,7 +628,8 @@ export async function getStandings(leagueCode: string): Promise<LeagueStandings 
       standings,
     };
 
-    setCache(cacheKey, result, STANDINGS_TTL);
+    recordItems(url, standings.length);
+    if (standings.length > 0) setCache(cacheKey, result, STANDINGS_TTL);
     return result;
   }
 
@@ -414,14 +643,18 @@ export async function getAllStandings(): Promise<LeagueStandings[]> {
   const codes = ["PL", "PD", "BL1", "SA", "FL1"];
   const results: LeagueStandings[] = [];
 
-  const promises = codes.map(async (code) => {
-    const s = await getStandings(code);
-    return s;
-  });
-
-  const standings = await Promise.all(promises);
-  for (const s of standings) {
-    if (s) results.push(s);
+  for (const code of codes) {
+    // Stop as soon as the API is clearly unreachable: a blocked network / bad key
+    // fails every league identically, and one failed request per league used to
+    // stack up to ~30s of latency before the route fell back to seed data.
+    if (results.length === 0 && code !== codes[0]) {
+      const last = getLastUpstreamAttempt();
+      if (last && !last.ok && (last.status === null || last.status === 401 || last.status === 429)) {
+        break;
+      }
+    }
+    const standings = await getStandings(code);
+    if (standings) results.push(standings);
   }
 
   return results;
@@ -526,6 +759,96 @@ function parseMatches(matches: Record<string, unknown>[], leagueCode?: string): 
     }
     return parsed;
   });
+}
+
+// ── Diagnostics ─────────────────────────────────────────────────────────
+
+export interface ProbeResult {
+  name: string;
+  url: string;
+  /** HTTP status, or null when the request never got a response */
+  status: number | null;
+  ms: number;
+  ok: boolean;
+  error?: string;
+  summary: Record<string, unknown>;
+}
+
+/** Summarise a matches payload: total + breakdown by match status. */
+function summariseMatches(payload: Record<string, unknown>) {
+  const matches = (payload.matches as Record<string, unknown>[]) || [];
+  const byStatus: Record<string, number> = {};
+  for (const m of matches) {
+    const status = String(m.status ?? "UNKNOWN");
+    byStatus[status] = (byStatus[status] ?? 0) + 1;
+  }
+  return {
+    count: matches.length,
+    byStatus,
+    upcoming: (byStatus.SCHEDULED ?? 0) + (byStatus.TIMED ?? 0),
+  };
+}
+
+/**
+ * Actively query football-data.org (bypassing the cache) and report what each
+ * endpoint answered — the fastest way to tell "no key" / "network blocked" /
+ * "403: plan does not cover this resource" / "nothing scheduled" apart.
+ *
+ * Stays at 3 requests and goes through the shared rate limiter
+ * (free tier = 10 requests/minute), so it takes ~20s.
+ */
+export async function probeFootballApi(): Promise<ProbeResult[]> {
+  const today = isoDate(0);
+  const inAWeek = isoDate(8);
+
+  const endpoints: Array<{
+    name: string;
+    url: string;
+    summarise: (data: Record<string, unknown>) => Record<string, unknown>;
+  }> = [
+    {
+      name: "key check — /v4/competitions/PL",
+      url: `${BASE_URL}/competitions/PL`,
+      summarise: (d) => ({ competition: d.name ?? null, plan: d.plan ?? null }),
+    },
+    {
+      name: "league table — /v4/competitions/2021/standings",
+      url: `${BASE_URL}/competitions/2021/standings`,
+      summarise: (d) => {
+        const blocks = (d.standings as Record<string, unknown>[] | undefined) ?? [];
+        const table = (blocks[0]?.table as unknown[] | undefined) ?? [];
+        return { rows: table.length };
+      },
+    },
+    {
+      name: `fixtures — /v4/matches?dateFrom=${today}&dateTo=${inAWeek}`,
+      url: `${BASE_URL}/matches?dateFrom=${today}&dateTo=${inAWeek}`,
+      summarise: (d) => summariseMatches(d),
+    },
+  ];
+
+  const results: ProbeResult[] = [];
+  for (const endpoint of endpoints) {
+    const { res, attempt } = await requestUpstream(endpoint.url);
+    let summary: Record<string, unknown> = {};
+    if (res) {
+      try {
+        summary = endpoint.summarise((await res.json()) as Record<string, unknown>);
+      } catch (err) {
+        summary = { parseError: describeError(err) };
+      }
+    }
+    results.push({
+      name: endpoint.name,
+      url: endpoint.url,
+      status: attempt?.status ?? null,
+      ms: attempt?.ms ?? 0,
+      ok: !!attempt?.ok,
+      error: attempt?.error,
+      summary,
+    });
+  }
+  return results;
 }
 
 // ── Tip Generation Helpers ──────────────────────────────────────────────

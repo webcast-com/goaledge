@@ -23,7 +23,7 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
-    const slip = await db.sharedSlip.findUnique({ where: { slug } });
+    const slip = await db.orm.SharedSlip.first({ slug });
 
     if (!slip) {
       return NextResponse.json({ error: "Slip not found" }, { status: 404 });

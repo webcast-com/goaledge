@@ -1674,3 +1674,129 @@ Stage Summary:
 - Live stats ticker provides social proof and engagement
 - Ticker hidden on mobile to save space
 - Zero lint errors
+---
+Task ID: 15
+Agent: Arena agent
+Task: Diagnose "API gets the league table but no matches" and make live-data failures visible
+
+Work Log:
+- Reproduced the asymmetry in the code paths: `/api/standings` is one unfiltered request
+  (`/v4/competitions/{id}/standings`) that falls back to a seed table, and the Standings
+  React component ships its own hardcoded table, so the section always renders something
+  that looks live. `/api/tips` uses `/v4/matches?dateFrom&dateTo&status=SCHEDULED` and, when
+  that returns nothing or fails, silently serves DB/seed tips — no error, no log.
+- Cross-checked the committed SQLite DB: last successful live fetch 2026-09-10T20:27Z
+  (12 `real_*` tips for matches on 14–16 Sep). The 09-06T23:54 vs 09-07T00:02 tip batches
+  prove the `dateTo`-is-exclusive window behaviour of v4.
+- Found the key-precedence trap: `AppSetting.football_api_key` (7508…eaaa, saved 2026-07-31)
+  is read before `FOOTBALL_API_KEY`, so the 2026-09-11 ".env key format" commit had no
+  runtime effect. `getApiKeyInfo()` + `/api/diagnostics/football` now surface this.
+- Verified from the sandbox that api.football-data.org is unreachable while
+  api.github.com/registry.npmjs.org work (egress allowlist) — added a script and endpoint so
+  the same check can be run inside the real container.
+- Fixed football-api.ts: dropped the `status=SCHEDULED` filter (fixtures are locally filtered
+  to SCHEDULED + TIMED — football-data.org flips to TIMED when the kick-off time is confirmed),
+  `dateTo = today+8` for a real 7-day window, `getFinishedMatches()` no longer asks for an
+  empty range, no more caching of empty/failed results, 15s fetch timeout, bounded per-league
+  fallback (early exit on network/auth failures, 25s budget), per-upstream-attempt diagnostics
+  + console.warn on every failure, `FOOTBALL_API_MIN_INTERVAL_MS` pacing knob.
+- Added `GET /api/diagnostics/football[?probe=1]`, `scripts/football-api-check.mjs`
+  (standalone, no deps, `--key/--delay/--base` flags, verdict section), `note` on the seed
+  responses of /api/tips, /api/standings, /api/fixtures, /api/live-scores, and Live/Demo
+  badges with the upstream reason as tooltip in the Standings and Tips sections.
+- Made `/api/tips` persist tips inside its own try/catch so a DB error can no longer turn a
+  successful live fetch into seed tips.
+- Added `src/lib/football-api.test.ts` (10 cases). Full suite 50 tests pass; ESLint 0 errors;
+  tsc clean for all touched files (pre-existing Prisma/socket.io errors unchanged).
+- Documented the two gotchas (DB key shadows .env, SCHEDULED vs TIMED) in README
+  "Live data troubleshooting" and replaced the real-looking key in .env.example with a placeholder.
+
+Stage Summary:
+- Root cause candidates are now all observable instead of silently masked: no key, blocked
+  network, 401/403 plan restriction, 429 rate limit, or an empty query result.
+- The specific "matches missing but table present" bug is the `status=SCHEDULED` filter
+  (plus the table's hardcoded fallback hiding that it was seed data all along).
+- Report: FOOTBALL-API-DIAGNOSIS.md — run `node scripts/football-api-check.mjs` or
+  `curl localhost:3000/api/diagnostics/football?probe=1` in the deployed container to confirm.
+
+---
+Task ID: 16
+Agent: Arena agent
+Task: Fix "Prisma 7 is failing" (blocked engine download) without an RC migration
+
+Work Log:
+- Reproduced the failure: `prisma generate`, `prisma db push` — and even `prisma --version` —
+  die in this sandbox with "request to https://binaries.prisma.sh/all_commits/0edf323e.../
+  schema-engine.gz.sha256 failed". Node/npm have network here (registry.npmjs.org works), only
+  that host is blocked, so the whole boot chain (postinstall → compose) aborted before `next dev`.
+- Verified the workaround is sound: with `PRISMA_SCHEMA_ENGINE_BINARY` pointing at a no-op script,
+  `prisma generate` completes in ~150ms — generation reads the schema through prisma-schema-wasm
+  and never executes the engine binary.
+- Switched prisma/schema.prisma to the modern `prisma-client` generator with
+  `output = "../src/generated/prisma"` and `importFileExtension = "ts"`; committed the generated
+  client (18 files, 700 KB). The app imports it via `@/generated/prisma/client`, so the runtime is
+  just the @prisma/client WASM/driver-adapter stack — no native engines needed.
+- Added scripts/prisma.sh (generate | push | seed | status): tolerant of the blocked download
+  (no-op engine retry + committed-client verification for generate, warn-and-continue for push),
+  picks Bun or Node for the seed.
+- Rewired package.json (postinstall, db:generate, db:push, db:seed, db:status), the compose boot
+  chain (`bun run db:generate|db:push|db:seed` instead of `bunx prisma generate`) and
+  prisma.config.ts (seed moved to migrations.seed — the old top-level key is not part of the 7.x
+  config type; an absolute file: URL so the CLI stops creating prisma/db/custom.db).
+- Fixed a second, independent breakage: prisma/seed.mjs imported `PrismaLibSQL`, which
+  @prisma/adapter-libsql@7 does not export (it is `PrismaLibSql`) — the seed could never run.
+- Fixed the football-api 30s stall when the API is unreachable: getAllStandings() now stops after
+  the first network/auth/rate-limit failure instead of querying all five leagues through the
+  6.1s rate-limit pacing, and rejected requests (401/403/429) or network failures no longer make
+  the next request wait. /api/standings went from 31.9s to 3.2s on a blocked network.
+- Set DATABASE_URL in .env / .env.example to file:./db/custom.db (the old Prisma Postgres URL is
+  unusable with the sqlite datasource and logged a warning on every query).
+- Verification: `bun prisma/seed.mjs` seeds successfully offline (then restored the committed DB);
+  `bun` smoke test through src/lib/db.ts returns tips=93/upcoming=83/users=3; `next dev --webpack`
+  boots and serves / (200), /api/tips (12 tips, source database, upstream note), /api/admin/stats
+  (DB reads), /api/standings (seed fallback) with zero Prisma errors; eslint 0 errors; tsc has no
+  new errors; 50 vitest tests pass.
+
+Stage Summary:
+- Prisma 7 now works in the blocked environment: install, generate, push, seed and the app itself.
+- Prisma "8" (8.0.0-rc.13) is the new unified Prisma CLI / Prisma Next RC — no `generate`, `db push`
+  or stable @prisma/client 8.x — so upgrading is a data-layer migration, not a version bump.
+  Documented and left for an explicit decision.
+
+## Task 17 — Prisma Next (Prisma 8) migration
+
+User asked to "update Prisma version to 8" (Prisma 7 was failing on their machine) and, when asked,
+chose the real migration over a document-only answer.
+
+- Research first: Prisma "8" is the **Prisma Next** line (`prisma@8.0.0-rc.13`) — a unified CLI with
+  `contract`/`db`/`orm`/`migration` commands, **no `prisma generate`, no `db push`**, and no stable
+  `@prisma/client` 8.x. `orm init` only scaffolds Postgres/MongoDB, so the SQLite setup was wired by
+  hand: `@prisma/orm-sqlite@8.0.0-rc.9` runtime + `@prisma/cli-engine` + `prisma@8.0.0-rc.13` CLI.
+- Contract authored at `src/prisma/contract.prisma` for all ten models and compiled to
+  `contract.json`/`contract.d.ts` (`npm run db:emit`); `prisma.config.ts` rewritten for
+  `@prisma/orm-sqlite/config`; `src/prisma/db.ts` exposes the façade and `src/lib/db.ts` re-exports
+  it so routes keep one import path.
+- Rewrote all 83 data-access call sites across 26 files to the ORM (`.where(...).all()`,
+  `.first({ id })`, `.select(...)`, `.create(...)`, `.where(...).update(...)`, `.upsert(...)`,
+  `.aggregate(a => ({ n: a.count() }))`, `.include(...)`), plus the seed, the client script, the
+  compose chain, `.env` docs, ESLint ignores and `serverExternalPackages`.
+- SQLite target constraints handled explicitly: no `Boolean` (contract uses `Int` 0|1 with boundary
+  mapping), no `cuid()`/`uuid()` default generators (ids come from `src/lib/ids.ts`), and
+  `@@map("<Model>")` on every model so the contract matches the PascalCase tables the Prisma 7
+  schema created.
+- Deleted the superseded Prisma 7 artefacts (`src/generated/prisma/`, `prisma/schema.prisma`, the
+  stray `prisma/db/custom.db`) and the `@prisma/client`/`@prisma/adapter-libsql`/`@libsql/client`
+  dependencies.
+- Verification: 50/50 vitest tests pass (test doubles rewritten against a shared ORM fake in
+  `src/test-support/orm-fake.ts`), eslint 0 errors, tsc clean apart from pre-existing socket.io and
+  FakeBet errors, seed runs offline under Bun, and the dev server serves / (200), /api/tips
+  (source: database), /api/admin/stats (93 tips / 3 users), /api/performance, /api/newsletter,
+  /api/settings/api-key and /sitemap.xml against the untouched `db/custom.db`.
+- Known and documented: `prisma db verify`/`db sign` report differences inherited from the old DDL
+  (timestamp column affinity, auto-index names, no contract marker); queries do not need the marker.
+
+Stage Summary:
+- The app now runs on Prisma Next (Prisma 8 RC) against the same SQLite file, with the contract as
+  the single source of truth and no CLI step required to boot.
+- Remaining risk: the runtime is a release candidate; `@prisma/orm-sqlite` prints an experimental
+  warning and the driver requires Node >= 22.5 or a bun with `node:sqlite` (verified on bun 1.4.2).

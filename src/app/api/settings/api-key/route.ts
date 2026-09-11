@@ -10,9 +10,7 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   try {
-    const setting = await db.appSetting.findUnique({
-      where: { key: "football_api_key" },
-    });
+    const setting = await db.orm.AppSetting.first({ key: "football_api_key" });
 
     const apiKey = setting?.value || process.env.FOOTBALL_API_KEY || "";
 
@@ -124,10 +122,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Save to database
-    await db.appSetting.upsert({
-      where: { key: "football_api_key" },
-      create: { key: "football_api_key", value: apiKey },
-      update: { value: apiKey },
+    await db.orm.AppSetting.where({ key: "football_api_key" }).upsert({
+      create: { key: "football_api_key", value: apiKey, updatedAt: new Date() },
+      update: { value: apiKey, updatedAt: new Date() },
     });
 
     return NextResponse.json({
@@ -150,9 +147,7 @@ export async function POST(req: NextRequest) {
  */
 export async function DELETE() {
   try {
-    await db.appSetting.deleteMany({
-      where: { key: "football_api_key" },
-    });
+    await db.orm.AppSetting.where({ key: "football_api_key" }).delete();
 
     // Clear in-memory cache in football-api
     try {

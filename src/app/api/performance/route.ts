@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     // Get real performance from DB
-    const allBets = await db.placedBet.findMany();
+    const allBets = await db.orm.PlacedBet.all();
 
     const totalStaked = allBets.reduce((sum, b) => sum + b.stake, 0);
     const wonBets = allBets.filter((b) => b.status === "won");
@@ -18,7 +18,7 @@ export async function GET() {
     const netPL = totalReturned - totalStaked;
 
     // Get tip performance from DB
-    const allTips = await db.tip.findMany();
+    const allTips = await db.orm.Tip.all();
     const wonTips = allTips.filter((t) => t.status === "won").length;
     const lostTips = allTips.filter((t) => t.status === "lost").length;
 

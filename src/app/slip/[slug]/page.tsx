@@ -15,7 +15,7 @@ interface SlipLeg {
 }
 
 async function getSlip(slug: string) {
-  const slip = await db.sharedSlip.findUnique({ where: { slug } });
+  const slip = await db.orm.SharedSlip.first({ slug });
   if (!slip) return null;
   let legs: SlipLeg[] = [];
   try {

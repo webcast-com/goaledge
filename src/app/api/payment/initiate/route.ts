@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
+import { newId } from "@/lib/ids";
 import { resolveRequestEmail } from "@/lib/auth";
 import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
@@ -117,17 +118,16 @@ export async function POST(request: NextRequest) {
     else expiresAt.setDate(expiresAt.getDate() + 30);
 
     // Store payment in DB
-    await db.payment.create({
-      data: {
-        email,
-        amount: amountNum,
-        plan,
-        reference,
-        accessCode,
-        status: "pending",
-        expiresAt,
-        metadata: JSON.stringify({ initiatedAt: now.toISOString() }),
-      },
+    await db.orm.Payment.create({
+      id: newId(),
+      email,
+      amount: amountNum,
+      plan,
+      reference,
+      accessCode,
+      status: "pending",
+      expiresAt,
+      metadata: JSON.stringify({ initiatedAt: now.toISOString() }),
     });
 
     return NextResponse.json({

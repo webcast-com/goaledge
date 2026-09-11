@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { settleBet } from "./bet-settlement";
+import { makeOrmDb } from "@/test-support/orm-fake";
 
 interface FakeTip {
   id: string;
@@ -10,26 +11,17 @@ interface FakeBet {
   id: string;
   status: string;
   legs: string;
+  result?: string;
+  settledAt?: Date;
 }
 
-/** Minimal PrismaClient stand-in with the methods settleBet uses. */
+/** Minimal client stand-in with the ORM surface settleBet uses. */
 function makeDb(tips: FakeTip[], bets: FakeBet[]) {
-  const db: any = {
-    placedBet: {
-      findUnique: async ({ where }: { where: { id: string } }) =>
-        bets.find((b) => b.id === where.id) ?? null,
-      update: async ({ where, data }: { where: { id: string }; data: any }) => {
-        const bet = bets.find((b) => b.id === where.id)!;
-        Object.assign(bet, data);
-        return bet;
-      },
-    },
-    tip: {
-      findMany: async ({ where }: { where: { id: { in: string[] } } }) =>
-        tips.filter((t) => where.id.in.includes(t.id)),
-    },
-  };
-  return db;
+  // The fake implements the slice of the ORM surface settleBet touches.
+  return makeOrmDb({
+    Tip: { rows: tips as unknown as Record<string, unknown>[] },
+    PlacedBet: { rows: bets as unknown as Record<string, unknown>[] },
+  }) as never;
 }
 
 const legs = (tipIds: string[]) =>
@@ -66,7 +58,7 @@ describe("settleBet", () => {
     await settleBet(db, "b1");
     expect(bets[0].status).toBe("pending");
     expect(bets[0].settledAt).toBeUndefined();
-    const results = JSON.parse(bets[0].result);
+    const results = JSON.parse(bets[0].result!);
     expect(results).toEqual([
       { tipId: "t1", result: "won" },
       { tipId: "t2", result: "pending" },
@@ -95,7 +87,7 @@ describe("settleBet", () => {
     const db = makeDb([], bets);
     await settleBet(db, "b1");
     expect(bets[0].status).toBe("pending");
-    expect(JSON.parse(bets[0].result)[0].result).toBe("pending");
+    expect(JSON.parse(bets[0].result!)[0].result).toBe("pending");
   });
 
   it("does nothing to already-settled bets", async () => {

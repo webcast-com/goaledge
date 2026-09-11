@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { newId } from "@/lib/ids";
 import { resolveRequestEmail } from "@/lib/auth";
 import { settleBet } from "@/lib/bet-settlement";
 import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
@@ -119,16 +120,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the bet
-    const bet = await db.placedBet.create({
-      data: {
-        email,
-        betType,
-        legs: JSON.stringify(legs),
-        stake,
-        totalOdds: Math.round(computedOdds * 100) / 100,
-        potentialReturn: computedReturn,
-        status: "pending",
-      },
+    const bet = await db.orm.PlacedBet.create({
+      id: newId(),
+      email,
+      betType,
+      legs: JSON.stringify(legs),
+      stake,
+      totalOdds: Math.round(computedOdds * 100) / 100,
+      potentialReturn: computedReturn,
+      status: "pending",
     });
 
     // Initialize per-leg results as pending
@@ -137,9 +137,8 @@ export async function POST(request: NextRequest) {
       result: "pending" as const,
     }));
 
-    await db.placedBet.update({
-      where: { id: bet.id },
-      data: { result: JSON.stringify(legResults) },
+    await db.orm.PlacedBet.where({ id: bet.id }).update({
+      result: JSON.stringify(legResults),
     });
 
     // If any leg is already settled (won/lost/void), resolve the bet immediately.
@@ -149,7 +148,7 @@ export async function POST(request: NextRequest) {
       console.error("Error settling bet at placement:", error);
     }
 
-    const settled = await db.placedBet.findUnique({ where: { id: bet.id } });
+    const settled = await db.orm.PlacedBet.first({ id: bet.id });
 
     return NextResponse.json({
       success: true,

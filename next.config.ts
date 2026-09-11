@@ -6,14 +6,10 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  // Prisma 6 with engineType "client" + driver adapters generates a hashed
-  // client module that Turbopack/webpack cannot bundle. Keep these packages
-  // external so Node loads them from node_modules at runtime.
-  serverExternalPackages: [
-    "@prisma/client",
-    "@prisma/adapter-libsql",
-    "@libsql/client",
-  ],
+  // Prisma Next's SQLite façade talks to the database through Node's built-in
+  // `node:sqlite` driver. Keeping the package external stops the bundler from
+  // rewriting its dynamic requires and the `node:` import.
+  serverExternalPackages: ["@prisma/orm-sqlite"],
   allowedDevOrigins: [
     "http://127.0.0.1:3000",
     "http://localhost:3000",
