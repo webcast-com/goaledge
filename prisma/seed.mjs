@@ -10,25 +10,31 @@
  *
  * Usage: npm run db:seed   (or: npx prisma db seed)
  */
-// The client is committed under src/generated/prisma (see prisma/schema.prisma),
-// so the seed runs without the Prisma CLI — which needs to download a native
-// schema engine that is unreachable in the Base44/Arena sandbox. The generated
-// tree is TypeScript with explicit `.ts` imports; both Bun and Node >= 22.18
-// (type stripping) run it as-is. scripts/prisma-seed.sh picks the runtime.
-import { PrismaClient } from "../src/generated/prisma/client.ts";
-import { PrismaLibSql } from "@prisma/adapter-libsql"; // 7.x export is PrismaLibSql (not PrismaLibSQL)
+// Prisma Next (Prisma 8) seed. The contract artefacts are committed under
+// src/prisma, so this runs without the Prisma CLI. The client is the SQLite
+// façade from @prisma/orm-sqlite; it uses the Node built-in `node:sqlite`
+// driver, so run it with Node >= 22.5 (or Bun >= 1.2). scripts/prisma.sh seed
+// picks the runtime.
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-// Mirror src/lib/db.ts: the schema uses engineType "client" + driver adapters,
-// so a bare `new PrismaClient()` cannot connect. Resolve the SQLite file from
-// the project root (prisma/ is one level down).
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const projectRoot = path.resolve(__dirname, "..");
-const dbPath = path.join(projectRoot, "db", "custom.db");
+// Load .env before the client is created — Node does not read it automatically
+// the way Bun does, and the SQLite façade resolves its file path at import time.
+const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+try {
+  const envFile = fs.readFileSync(path.join(projectRoot, ".env"), "utf8");
+  for (const line of envFile.split("\n")) {
+    const match = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/.exec(line);
+    if (!match) continue;
+    const value = match[2].replace(/^["']|["']$/g, "");
+    if (process.env[match[1]] === undefined) process.env[match[1]] = value;
+  }
+} catch {
+  // No .env — fall back to the default db/custom.db path.
+}
 
-const adapter = new PrismaLibSql({ url: `file:${dbPath}` });
-const db = new PrismaClient({ adapter });
+const { db } = await import("../src/prisma/db.ts");
 
 function fmtDate(offsetDays, hour) {
   const d = new Date();
@@ -161,10 +167,9 @@ async function main() {
   let updated = 0;
 
   for (const tip of upcomingTips) {
-    await db.tip.upsert({
-      where: { id: tip.id },
-      create: tip,
-      update: { ...tip },
+    await db.orm.Tip.where({ id: tip.id }).upsert({
+      create: { ...tip, isPremium: tip.isPremium ? 1 : 0 },
+      update: { ...tip, isPremium: tip.isPremium ? 1 : 0 },
     });
     created++;
   }
@@ -172,10 +177,9 @@ async function main() {
   for (let i = 0; i < settledTips.length; i++) {
     const tip = settledTips[i];
     const createdAt = new Date(Date.now() - (i + 1) * 86400000); // staggered: 1..10 days ago
-    await db.tip.upsert({
-      where: { id: tip.id },
-      create: { ...tip, createdAt },
-      update: { ...tip },
+    await db.orm.Tip.where({ id: tip.id }).upsert({
+      create: { ...tip, isPremium: tip.isPremium ? 1 : 0, createdAt },
+      update: { ...tip, isPremium: tip.isPremium ? 1 : 0 },
     });
     updated++;
   }
@@ -185,23 +189,28 @@ async function main() {
   const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const makeCode = () =>
     Array.from({ length: 6 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join("");
-  const usersWithoutCode = await db.user.findMany({ where: { referralCode: null }, select: { id: true } });
+  const usersWithoutCode = await db.orm.User.where((u) => u.referralCode.isNull())
+    .select("id")
+    .all();
   for (const u of usersWithoutCode) {
     let code = makeCode();
     for (let attempt = 0; attempt < 5; attempt++) {
-      const clash = await db.user.findUnique({ where: { referralCode: code } });
+      const clash = await db.orm.User.where({ referralCode: code }).first();
       if (!clash) break;
       code = makeCode();
     }
-    await db.user.update({ where: { id: u.id }, data: { referralCode: code } });
+    await db.orm.User.where({ id: u.id }).update({ referralCode: code });
   }
   if (usersWithoutCode.length > 0) {
     console.log(`Backfilled referral codes for ${usersWithoutCode.length} existing user(s).`);
   }
 
   const counts = {
-    upcoming: await db.tip.count({ where: { status: "upcoming" } }),
-    settled: await db.tip.count({ where: { status: { in: ["won", "lost", "void"] } } }),
+    upcoming: (await db.orm.Tip.where({ status: "upcoming" }).aggregate((a) => ({ n: a.count() }))).n,
+    settled: (
+      await db.orm.Tip.where((t) => t.status.in(["won", "lost", "void"]))
+        .aggregate((a) => ({ n: a.count() }))
+    ).n,
   };
   console.log(`Seed complete: ${created} upcoming + ${updated} settled tips upserted.`);
   console.log(`DB now has ${counts.upcoming} upcoming and ${counts.settled} settled tips.`);
@@ -213,5 +222,5 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    await db.$disconnect();
+    await db.close();
   });

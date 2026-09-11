@@ -1,0 +1,159 @@
+model User {
+  id           String    @id
+  email        String    @unique
+  name         String?
+  password     String?
+  image        String?
+  plan         String    @default("free")
+  referralCode String?   @unique
+  createdAt    DateTime  @default(now())
+  updatedAt    temporal.updatedAt()
+
+  @@map("User")
+
+}
+
+model Referral {
+  id          String    @id
+  code        String
+  referrerId  String
+  referredId  String    @unique
+  status      String    @default("pending")
+  rewardDays  Int       @default(7)
+  createdAt   DateTime  @default(now())
+  qualifiedAt DateTime?
+  rewardedAt  DateTime?
+
+  referrer User @relation(fields: [referrerId], references: [id])
+  referred User @relation(fields: [referredId], references: [id])
+
+  @@index([referrerId])
+
+  @@map("Referral")
+
+}
+
+model Bookmark {
+  id        String   @id
+  userId    String
+  tipId     String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  tip  Tip  @relation(fields: [tipId], references: [id])
+
+  @@unique([userId, tipId])
+
+  @@map("Bookmark")
+
+}
+
+model Tip {
+  id              String   @id
+  league          String
+  country         String
+  flag            String   @default("⚽")
+  homeTeam        String
+  awayTeam        String
+  matchTime       String
+  predictionType  String
+  prediction      String
+  odds            String
+  confidence      Int
+  confidenceLabel String
+  status          String   @default("upcoming")
+  tipster         String
+  isPremium       Int      @default(0)
+  analysis        String?
+  createdAt       DateTime @default(now())
+  updatedAt       temporal.updatedAt()
+
+  @@map("Tip")
+
+}
+
+model BetSlip {
+  id        String   @id
+  userId    String
+  tipId     String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  tip  Tip  @relation(fields: [tipId], references: [id])
+
+  @@map("BetSlip")
+
+}
+
+model Newsletter {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  subscribedAt DateTime @default(now())
+  active       Int      @default(1)
+
+  @@map("Newsletter")
+
+}
+
+model Payment {
+  id         String    @id
+  userId     String?
+  email      String
+  amount     Int
+  plan       String
+  reference  String    @unique
+  accessCode String?
+  status     String    @default("pending")
+  channel    String?
+  paidAt     DateTime?
+  expiresAt  DateTime?
+  metadata   String?
+  createdAt  DateTime  @default(now())
+  updatedAt  temporal.updatedAt()
+
+  @@map("Payment")
+
+}
+
+model PlacedBet {
+  id              String    @id
+  userId          String?
+  email           String
+  betType         String
+  legs            String
+  stake           Int
+  totalOdds       Float
+  potentialReturn Int
+  status          String    @default("pending")
+  result          String?
+  settledAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       temporal.updatedAt()
+
+  @@map("PlacedBet")
+
+}
+
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt temporal.updatedAt()
+
+  @@map("AppSetting")
+
+}
+
+model SharedSlip {
+  slug            String   @id
+  email           String?
+  legs            String
+  stake           Int?
+  totalOdds       Float?
+  potentialReturn Int?
+  createdAt       DateTime @default(now())
+
+  @@index([email])
+
+  @@map("SharedSlip")
+
+}

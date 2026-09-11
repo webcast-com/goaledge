@@ -6,14 +6,10 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  // The generated Prisma client (src/generated/prisma) imports the client runtime
-  // from node_modules — keep these packages external so the bundler does not try
-  // to package the native libSQL module.
-  serverExternalPackages: [
-    "@prisma/client",
-    "@prisma/adapter-libsql",
-    "@libsql/client",
-  ],
+  // Prisma Next's SQLite façade talks to the database through Node's built-in
+  // `node:sqlite` driver. Keeping the package external stops the bundler from
+  // rewriting its dynamic requires and the `node:` import.
+  serverExternalPackages: ["@prisma/orm-sqlite"],
   allowedDevOrigins: [
     "http://127.0.0.1:3000",
     "http://localhost:3000",

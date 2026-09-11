@@ -1,6 +1,6 @@
 # GoalEdge — Smarter Football Predictions
 
-A football prediction & betting tips platform built with **Next.js 16 (App Router)**, **TypeScript**, **Tailwind CSS 4**, **shadcn/ui**, **Prisma + SQLite**, and **Framer Motion**.
+A football prediction & betting tips platform built with **Next.js 16 (App Router)**, **TypeScript**, **Tailwind CSS 4**, **shadcn/ui**, **Prisma Next + SQLite**, and **Framer Motion**.
 
 ## Features
 
@@ -24,7 +24,7 @@ A football prediction & betting tips platform built with **Next.js 16 (App Route
 | Framework  | Next.js 16 (App Router, Turbopack, standalone)     |
 | Language   | TypeScript                                         |
 | Styling    | Tailwind CSS 4 + shadcn/ui                         |
-| Database   | SQLite via Prisma (`db/custom.db`)                 |
+| Database   | SQLite via Prisma Next (`db/custom.db`)            |
 | Auth       | Built-in: bcrypt passwords + signed HS256 session cookie ([details](#authentication)) |
 | Payments   | Paystack (initialize / verify / webhook)           |
 | Data       | football-data.org API (optional, with seed fallback) |
@@ -72,11 +72,11 @@ npm run dev          # http://localhost:3000
 | `npm run start`   | Serve the standalone build (`bun .next/standalone/server.js`) |
 | `npm run lint`    | ESLint                                             |
 | `npm test`        | Vitest unit tests (`src/**/*.test.ts`)             |
-| `npm run db:generate` | (Re)generate the Prisma client into `src/generated/prisma` |
-| `npm run db:push` | Sync Prisma schema to the database (skipped with a warning when the CLI has no engine) |
+| `npm run db:emit` | Compile `src/prisma/contract.prisma` → `contract.json` + `contract.d.ts` |
+| `npm run db:verify` | Check the database against the contract        |
+| `npm run db:push` | Apply contract changes to the database (`prisma db update`) |
 | `npm run db:seed` | Seed tips (idempotent; needs Bun or Node ≥ 22.18)  |
-| `npm run db:status` | Print CLI/engine/client/database status          |
-| `npm run db:reset`| Drop & recreate the database                       |
+| `npm run db:status` | Print CLI/contract/database/runtime status      |
 
 ## API routes
 
@@ -146,29 +146,30 @@ Two gotchas that bit this app:
    `dateTo` as *exclusive*. The client now requests a date window with no status filter
    and keeps `SCHEDULED` + `TIMED` locally.
 
-## Prisma troubleshooting
+## Prisma troubleshooting (Prisma Next / Prisma 8)
 
-The Prisma CLI downloads a native `schema-engine` from `binaries.prisma.sh` **before running any
-command** — that host is blocked in sandboxed/air-gapped environments, which used to abort
-`bun install` (postinstall), the Docker boot chain and every `db:*` script.
+GoalEdge runs **Prisma Next** — the Prisma 8 line, currently `8.0.0-rc.13` — against SQLite. There is
+no generated client and no `prisma generate` / `prisma db push` any more; the contract in
+`src/prisma/contract.prisma` is compiled into `contract.json` + `contract.d.ts` and the app queries
+through `@prisma/orm-sqlite` (driver: Node's built-in `node:sqlite`).
 
 ```bash
-npm run db:status        # CLI, engine download, generated client, database, runtime
+npm run db:status        # CLI, contract artefacts, database file, runtime
+npm run db:emit          # after editing src/prisma/contract.prisma
+npm run db:seed          # idempotent; runs under bun or node
 ```
 
 | Symptom | Meaning / fix |
 | ------- | ------------- |
-| `request to https://binaries.prisma.sh/... failed` | no engine download possible — harmless now: the client is committed in `src/generated/prisma` and the app runs from it |
-| `prisma generate` fails | `npm run db:generate` falls back to a local no-op engine (generation reads the schema with prisma-schema-wasm); the committed client is used if even that fails |
-| `prisma db push` fails | `npm run db:push` warns and continues — `db/custom.db` is committed with the full schema. Run `db:push` from a networked machine after schema changes |
-| `P2038 — Missing configured driver adapter` | a bare `new PrismaClient()` — always pass the `PrismaLibSql` adapter (see `src/lib/db.ts`) |
-| Seed crashes with `Export named 'PrismaLibSQL' not found` | the adapter exports `PrismaLibSql` (casing) |
-| `DATABASE_URL` warning on every query | set `DATABASE_URL="file:./db/custom.db"` — the schema is SQLite, a Postgres URL cannot work |
+| `Cannot find module 'node:sqlite'` | the runtime is older than Node 22.5 / a bun without `node:sqlite` (verified on bun 1.4.2) |
+| `prisma contract emit` fails with `CONTRACT.SOURCE_LOAD_FAILED` | a PSL feature the SQLite target does not support — see the diagnostics it prints (no `Boolean`, no `@default(cuid())`, no `@updatedAt`) |
+| `prisma db verify` reports `Marker missing` / schema differences | the shipped `db/custom.db` was created by the old Prisma 7 schema, so timestamp column affinity and auto-index names differ. Queries are unaffected — the app does not need the marker |
+| `db update` / `db init` | apply contract changes to the database (there is no `db push`); back up `db/custom.db` first |
+| API returns `isPremium: 0/1` instead of `true/false` | SQLite has no `Boolean` type — the contract stores `Int` and the routes map it at the boundary (see `src/app/api/tips/route.ts`) |
+| `DATABASE_URL` warning on every query | set `DATABASE_URL="file:./db/custom.db"` — a Postgres URL cannot work with the SQLite target |
 
-Why the client is committed: it keeps the app runnable with no CLI, no engine binaries and no
-network (`src/generated/prisma` is ~700 KB of TypeScript; `importFileExtension = "ts"` makes it
-loadable by Bun and Node ≥ 22.18 without a bundler). Regenerate after editing `prisma/schema.prisma`
-with `npm run db:generate` and commit the result.
+The compiled contract is committed so the app boots with no CLI step at all; re-run `npm run db:emit`
+and commit the two artefacts whenever the contract changes.
 
 ## Authentication
 
@@ -295,7 +296,7 @@ npm run build        # .next/standalone + static + public
 npm run start        # serves on port 3000
 ```
 
-Any Node 18+ host works (VPS, Railway, Render, Fly.io…). The `Caddyfile` in the repo proxies port 3000 and forwards `XTransformPort` websocket ports (e.g. the 3004 odds service). For production, switch `DATABASE_URL` to a shared volume-backed SQLite file (or migrate to Postgres via Prisma).
+Any Node 18+ host works (VPS, Railway, Render, Fly.io…). The `Caddyfile` in the repo proxies port 3000 and forwards `XTransformPort` websocket ports (e.g. the 3004 odds service). For production, switch `DATABASE_URL` to a shared volume-backed SQLite file (or move to a Postgres deployment with Prisma Next's Postgres target).
 
 ## Project structure
 

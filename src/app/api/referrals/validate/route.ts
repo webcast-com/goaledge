@@ -16,10 +16,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ valid: false, error: "Enter a referral code" });
     }
 
-    const referrer = await db.user.findUnique({
-      where: { referralCode: code },
-      select: { name: true, email: true },
-    });
+    const referrer = await db.orm.User.where({ referralCode: code })
+      .select("name", "email")
+      .first();
 
     if (!referrer) {
       return NextResponse.json({ valid: false, error: "That code doesn't exist" });

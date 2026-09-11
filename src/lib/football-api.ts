@@ -27,9 +27,7 @@ export async function getApiKey(): Promise<string> {
 
   // Try to load from database first
   try {
-    const setting = await db.appSetting.findUnique({
-      where: { key: "football_api_key" },
-    });
+    const setting = await db.orm.AppSetting.first({ key: "football_api_key" });
     if (setting?.value) {
       _dynamicApiKey = setting.value;
       _keyLoaded = true;

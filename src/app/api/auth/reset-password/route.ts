@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check the account exists (but respond the same either way).
-    const user = await db.user.findUnique({ where: { email }, select: { id: true } });
+    const user = await db.orm.User.where({ email }).select("id").first();
 
     if (user) {
       // TODO: send actual reset email (token + link) once an email provider is configured.

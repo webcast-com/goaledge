@@ -14,9 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Find the payment in DB
-    const payment = await db.payment.findUnique({
-      where: { reference },
-    });
+    const payment = await db.orm.Payment.where({ reference }).first();
 
     if (!payment) {
       return NextResponse.json(
@@ -66,9 +64,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (isFailed) {
-      await db.payment.update({
-        where: { reference },
-        data: { status: "failed", updatedAt: new Date() },
+      await db.orm.Payment.where({ reference }).update({
+        status: "failed",
+        updatedAt: new Date(),
       });
       return NextResponse.json({ status: "failed", message: "Payment failed" });
     }
@@ -77,41 +75,29 @@ export async function POST(request: NextRequest) {
       const now = new Date();
 
       // Update payment status
-      await db.payment.update({
-        where: { reference },
-        data: {
-          status: "completed",
-          paidAt: now,
-          channel: channel || "card",
-          updatedAt: now,
-        },
+      await db.orm.Payment.where({ reference }).update({
+        status: "completed",
+        paidAt: now,
+        channel: channel || "card",
+        updatedAt: now,
       });
 
       // Update user plan if user exists
       if (payment.userId) {
-        await db.user.update({
-          where: { id: payment.userId },
-          data: {
-            plan: "premium",
-            updatedAt: now,
-          },
+        await db.orm.User.where({ id: payment.userId }).update({
+          plan: "premium",
+          updatedAt: now,
         });
       } else {
         // Try to find user by email
-        const user = await db.user.findUnique({ where: { email: payment.email } });
+        const user = await db.orm.User.where({ email: payment.email }).first();
         if (user) {
-          await db.user.update({
-            where: { id: user.id },
-            data: {
-              plan: "premium",
-              updatedAt: now,
-            },
+          await db.orm.User.where({ id: user.id }).update({
+            plan: "premium",
+            updatedAt: now,
           });
           // Link payment to user
-          await db.payment.update({
-            where: { reference },
-            data: { userId: user.id },
-          });
+          await db.orm.Payment.where({ reference }).update({ userId: user.id });
         }
       }
 
@@ -175,9 +161,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const payment = await db.payment.findUnique({
-      where: { reference },
-    });
+    const payment = await db.orm.Payment.where({ reference }).first();
 
     if (!payment) {
       return NextResponse.json(

@@ -7,6 +7,7 @@ import {
   REFEREE_BONUS_DAYS,
   REFERRER_REWARD_DAYS,
 } from "./referrals";
+import { makeOrmDb } from "@/test-support/orm-fake";
 
 interface FakeUser {
   id: string;
@@ -39,48 +40,17 @@ interface FakePayment {
 }
 
 function makeDb(users: FakeUser[], referrals: FakeReferral[], payments: FakePayment[]) {
-  let refSeq = 0;
-  const db: any = {
-    user: {
-      findUnique: async ({ where }: { where: { email?: string; id?: string; referralCode?: string } }) =>
-        users.find((u) =>
-          where.email ? u.email === where.email :
-          where.id ? u.id === where.id :
-          u.referralCode === where.referralCode
-        ) ?? null,
-    },
-    referral: {
-      findUnique: async ({ where, include }: { where: { referredId: string }; include?: any }) => {
-        const ref = referrals.find((r) => r.referredId === where.referredId) ?? null;
-        if (!ref || !include) return ref;
-        const referrer = users.find((u) => u.id === ref.referrerId);
-        return { ...ref, referrer: { id: referrer?.id, email: referrer?.email } };
-      },
-      create: async ({ data }: { data: any }) => {
-        const ref: FakeReferral = { id: `ref_${++refSeq}`, ...data };
-        referrals.push(ref);
-        return ref;
-      },
-      update: async ({ where, data }: { where: { id: string }; data: any }) => {
-        const ref = referrals.find((r) => r.id === where.id)!;
-        Object.assign(ref, data);
-        return ref;
+  return makeOrmDb({
+    User: { rows: users as unknown as Record<string, unknown>[] },
+    Referral: {
+      rows: referrals as unknown as Record<string, unknown>[],
+      relations: {
+        referrer: (row) =>
+          users.find((u) => u.id === row.referrerId) ?? null,
       },
     },
-    payment: {
-      findFirst: async ({ where }: { where: { userId?: string; status?: string; expiresAt?: any } }) =>
-        payments.find((p) =>
-          p.userId === where.userId && p.status === where.status &&
-          (!where.expiresAt || (p.expiresAt && p.expiresAt >= where.expiresAt.gte))
-        ) ?? null,
-      create: async ({ data }: { data: any }) => {
-        const payment: FakePayment = { id: `pay_${payments.length}`, createdAt: new Date(), ...data };
-        payments.push(payment);
-        return payment;
-      },
-    },
-  };
-  return db;
+    Payment: { rows: payments as unknown as Record<string, unknown>[] },
+  }) as never;
 }
 
 describe("generateReferralCode / normalizeCode", () => {

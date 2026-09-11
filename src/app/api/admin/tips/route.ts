@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { newId } from "@/lib/ids";
 import { NextRequest, NextResponse } from "next/server";
 import { settleBetsForTip, isSettledStatus } from "@/lib/bet-settlement";
 
@@ -189,13 +190,22 @@ function getHistoricalSeedTips() {
 }
 
 async function seedHistoricalTips() {
-  const existingHistory = await db.tip.count({
-    where: { status: { in: ["won", "lost", "void"] } },
-  });
+  const existingHistory = (
+    await db.orm.Tip.where((t) => t.status.in(["won", "lost", "void"])).aggregate(
+      (a) => ({ n: a.count() }),
+    )
+  ).n;
 
   if (existingHistory === 0) {
     const historicalTips = getHistoricalSeedTips();
-    await db.tip.createMany({ data: historicalTips });
+    // The SQLite target has no createMany; insert row by row.
+    for (const tip of historicalTips) {
+      await db.orm.Tip.create({
+        ...tip,
+        id: newId(),
+        isPremium: tip.isPremium ? 1 : 0, // Boolean is Int(0|1) on SQLite
+      });
+    }
     return historicalTips;
   }
 
@@ -214,10 +224,11 @@ export async function GET(request: NextRequest) {
     // If history=true, ensure historical tips exist and return them
     if (history === "true") {
       const seeded = await seedHistoricalTips();
-      const historyTips = await db.tip.findMany({
-        where: { status: { in: ["won", "lost", "void"] } },
-        orderBy: { matchTime: "desc" },
-      });
+      const historyTips = await db.orm.Tip.where((t) =>
+        t.status.in(["won", "lost", "void"]),
+      )
+        .orderBy((t) => t.matchTime.desc())
+        .all();
       return NextResponse.json({ tips: historyTips });
     }
 
@@ -233,13 +244,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (isPremium !== null && isPremium !== undefined && isPremium !== "") {
-      where.isPremium = isPremium === "true";
+      where.isPremium = isPremium === "true" ? 1 : 0; // Boolean is Int(0|1) on SQLite
     }
 
-    const tips = await db.tip.findMany({
-      where: Object.keys(where).length > 0 ? where : undefined,
-      orderBy: { createdAt: "desc" },
-    });
+    const tips = await db.orm.Tip.where(where)
+      .orderBy((t) => t.createdAt.desc())
+      .all();
 
     return NextResponse.json({ tips });
   } catch (error) {
@@ -319,26 +329,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const tip = await db.tip.create({
-      data: {
-        league,
-        country,
-        flag: flag || "⚽",
-        homeTeam,
-        awayTeam,
-        matchTime,
-        predictionType,
-        prediction,
-        odds: String(odds),
-        confidence: confidenceNum,
-        confidenceLabel,
-        tipster,
-        isPremium: Boolean(isPremium),
-        analysis: analysis || null,
-      },
+    const tip = await db.orm.Tip.create({
+      id: newId(),
+      league,
+      country,
+      flag: flag || "⚽",
+      homeTeam,
+      awayTeam,
+      matchTime,
+      predictionType,
+      prediction,
+      odds: String(odds),
+      confidence: confidenceNum,
+      confidenceLabel,
+      tipster,
+      isPremium: isPremium ? 1 : 0, // Boolean is Int(0|1) on SQLite
+      analysis: analysis || null,
     });
 
-    return NextResponse.json({ tip }, { status: 201 });
+  return NextResponse.json({ tip }, { status: 201 });
   } catch (error) {
     console.error("Error creating tip:", error);
     return NextResponse.json(
@@ -378,7 +387,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Check if tip exists
-    const existing = await db.tip.findUnique({ where: { id } });
+    const existing = await db.orm.Tip.first({ id });
     if (!existing) {
       return NextResponse.json(
         { error: "Tip not found" },
@@ -386,10 +395,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const tip = await db.tip.update({
-      where: { id },
-      data: updateData,
-    });
+    const tip = await db.orm.Tip.where({ id }).update(updateData);
 
     // When a tip is settled, auto-resolve every pending bet that includes it.
     if (updateData.status && isSettledStatus(updateData.status)) {
@@ -424,7 +430,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if tip exists
-    const existing = await db.tip.findUnique({ where: { id } });
+    const existing = await db.orm.Tip.first({ id });
     if (!existing) {
       return NextResponse.json(
         { error: "Tip not found" },
@@ -432,7 +438,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await db.tip.delete({ where: { id } });
+    await db.orm.Tip.where({ id }).delete();
 
     return NextResponse.json({ success: true, message: "Tip deleted" });
   } catch (error) {

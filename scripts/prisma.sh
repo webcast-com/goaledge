@@ -1,36 +1,35 @@
 #!/bin/sh
-# GoalEdge — Prisma helper.
+# GoalEdge — Prisma Next (Prisma 8) helper.
 #
 # Why this wrapper exists
 # ----------------------
-# `prisma generate` and `prisma db push` make the CLI download a native
-# `schema-engine` from https://binaries.prisma.sh. That host is unreachable in the
-# Base44/Arena sandbox (and in any offline/air-gapped container), so the CLI dies
-# with: "request to https://binaries.prisma.sh/all_commits/<hash>/.../schema-engine.gz
-# failed" — which used to abort `bun install` (postinstall), the compose boot chain
-# and every `npm run db:*` command.
+# Prisma Next is contract-first: `src/prisma/contract.prisma` is compiled into
+# `src/prisma/contract.json` + `contract.d.ts` by `prisma contract emit`, and the
+# application queries the database through the façade in `src/prisma/db.ts`
+# (the `@prisma/orm-sqlite` runtime). The compiled contract artefacts are
+# committed, so the app boots without running the CLI at all.
 #
-# The app itself does not need that binary: the client is generated into the
-# repository (src/generated/prisma) and uses the driver-adapter/WASM runtime of
-# `@prisma/client` only. This script therefore:
+# The CLI is pure JavaScript (no schema-engine download), so — unlike the Prisma
+# 7 setup this replaced — emit/verify work in the Base44/Arena sandbox and in
+# any offline container. `db init`/`db update` (DDL) also work here for SQLite
+# because the target ships its own driver.
 #
-#   generate  regenerate the committed client; falls back to a local no-op engine
-#             (generation reads the schema with prisma-schema-wasm and never
-#             executes the engine binary)
-#   push      apply prisma/schema.prisma to db/custom.db — skipped with a warning
-#             when the CLI cannot run (the committed DB already has the schema)
+#   emit      compile the contract → src/prisma/contract.{json,d.ts}
+#   verify    check the committed database against the contract
 #   seed      run prisma/seed.mjs with Bun or Node (no CLI needed)
-#   status    print what is available: CLI, engine download, committed client, DB
+#   status    print CLI, contract artefact, database and runtime status
+#   migrate   pass-through for `prisma migration …` (plan/status/log)
+#   update    apply contract changes to the database (DDL) — see below
 #
 # Usage:
-#   sh scripts/prisma.sh generate|push|seed|status
-#   bun run db:generate   # same as `sh scripts/prisma.sh generate`
+#   sh scripts/prisma.sh emit|verify|seed|status|migrate|update
+#   bun run db:emit   # same as `sh scripts/prisma.sh emit`
 set -u
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$ROOT" || exit 1
 
-GENERATED_DIR="src/generated/prisma"
+CONTRACT_DIR="src/prisma"
 DB_FILE="db/custom.db"
 
 log() { printf '%s\n' "$*"; }
@@ -43,98 +42,66 @@ find_prisma() {
     command -v "$PRISMA_BIN" >/dev/null 2>&1 && { printf '%s' "$PRISMA_BIN"; return 0; }
   fi
   if command -v prisma >/dev/null 2>&1; then printf 'prisma'; return 0; fi
-  if [ -x node_modules/.bin/prisma ]; then printf '%s' "node_modules/.bin/prisma"; return 0; fi
+  if [ -x node_modules/.bin/prisma ]; then printf '%s' 'node_modules/.bin/prisma'; return 0; fi
   return 1
 }
 
-# A JS runtime that can execute the generated TypeScript client.
+# A JS runtime that can execute the TypeScript client (src/prisma/db.ts).
 find_js_runtime() {
   if command -v bun >/dev/null 2>&1; then printf 'bun'; return 0; fi
   if command -v node >/dev/null 2>&1; then printf 'node'; return 0; fi
   return 1
 }
 
-# Is the client we ship actually there (and does it look generated)?
-client_is_present() {
-  [ -f "$GENERATED_DIR/client.ts" ] && [ -d "$GENERATED_DIR/models" ] &&
-    [ "$(find "$GENERATED_DIR" -name '*.ts' | wc -l)" -ge 5 ]
+contract_is_present() {
+  [ -f "$CONTRACT_DIR/contract.prisma" ] &&
+    [ -f "$CONTRACT_DIR/contract.json" ] &&
+    [ -f "$CONTRACT_DIR/contract.d.ts" ]
 }
 
-prisma_generate() {
-  PRISMA=$(find_prisma) || fail "Prisma CLI not found — run your package manager's install first (bun install / npm install)."
+prisma_emit() {
+  PRISMA=$(find_prisma) || fail "Prisma CLI not found — run bun install / npm install first."
 
-  log "→ $PRISMA generate"
-  if "$PRISMA" generate; then
-    log "✓ Prisma client generated into $GENERATED_DIR"
-    return 0
-  fi
-
-  warn ""
-  warn "⚠  prisma generate could not run — the CLI could not download its schema engine"
-  warn "   (binaries.prisma.sh unreachable, e.g. inside the Base44/Arena sandbox)."
-  warn "   Retrying with a local no-op engine: generation reads the schema with"
-  warn "   prisma-schema-wasm and never executes the engine binary."
-
-  NOOP=$(mktemp) || fail "mktemp failed"
-  printf '#!/bin/sh\nexit 0\n' >"$NOOP"
-  chmod +x "$NOOP"
-
-  if PRISMA_SCHEMA_ENGINE_BINARY="$NOOP" "$PRISMA" generate; then
-    rm -f "$NOOP"
-    if client_is_present; then
-      log "✓ Prisma client generated into $GENERATED_DIR (engine download bypassed)"
+  log "→ $PRISMA contract emit"
+  if "$PRISMA" contract emit; then
+    if contract_is_present; then
+      log "✓ Contract compiled into $CONTRACT_DIR (contract.json + contract.d.ts)"
       return 0
     fi
-    fail "The generator reported success but $GENERATED_DIR looks incomplete — run prisma generate in a network-enabled environment."
+    fail "emit reported success but $CONTRACT_DIR/contract.json is missing."
   fi
-  rm -f "$NOOP"
-
-  if client_is_present; then
-    warn "✗ Regeneration failed, but the client committed in $GENERATED_DIR is intact — continuing with it."
-    warn "  Fix the schema/network and re-run: bun run db:generate"
-    return 0
-  fi
-  fail "✗ prisma generate failed and no committed client is available."
+  fail "✗ prisma contract emit failed — fix the contract diagnostics above."
 }
 
-prisma_push() {
-  PRISMA=$(find_prisma) || fail "Prisma CLI not found — run your package manager's install first (bun install / npm install)."
+prisma_verify() {
+  PRISMA=$(find_prisma) || fail "Prisma CLI not found — run bun install / npm install first."
+  log "→ $PRISMA db verify"
+  "$PRISMA" db verify || fail "✗ Database does not match the contract (see diagnostics above)."
+  log "✓ Database matches $CONTRACT_DIR/contract.prisma"
+}
 
+prisma_update() {
+  PRISMA=$(find_prisma) || fail "Prisma CLI not found — run bun install / npm install first."
   if [ ! -f "$DB_FILE" ]; then
-    warn "⚠  $DB_FILE is missing and the Prisma CLI needs its schema engine to create it."
-    fail "   Run this from a machine with access to binaries.prisma.sh: bun run db:push"
+    fail "✗ $DB_FILE is missing — restore it from git before applying contract changes."
   fi
-
-  log "→ $PRISMA db push"
-  if "$PRISMA" db push; then
-    log "✓ Database schema is in sync with prisma/schema.prisma"
-    return 0
-  fi
-
-  warn ""
-  warn "⚠  prisma db push could not run (schema engine download blocked)."
-  warn "   Continuing with the committed SQLite database at $DB_FILE, which already"
-  warn "   contains every table from prisma/schema.prisma."
-  warn "   Changed the schema? Apply it from a network-enabled environment with:"
-  warn "     bun run db:push   (or: prisma db push)"
-  return 0
+  warn "⚠  This applies contract changes (DDL) to $DB_FILE."
+  warn "   Back the database up first: cp $DB_FILE $DB_FILE.bak"
+  log "→ $PRISMA db update"
+  "$PRISMA" db update || fail "✗ db update failed — see diagnostics above."
+  log "✓ Database schema updated"
 }
 
 prisma_seed() {
-  RUNTIME=$(find_js_runtime) || fail "Need Bun or Node to run prisma/seed.mjs (the generated client is TypeScript)."
+  RUNTIME=$(find_js_runtime) || fail "Need Bun or Node to run prisma/seed.mjs (the client is TypeScript)."
   log "→ $RUNTIME prisma/seed.mjs"
   exec "$RUNTIME" prisma/seed.mjs
 }
 
-# migrate/reset need the real engine; never pretend they succeeded.
 prisma_migrate() {
-  PRISMA=$(find_prisma) || fail "Prisma CLI not found — run your package manager's install first."
-  log "→ $PRISMA $*"
-  if "$PRISMA" "$@"; then
-    return 0
-  fi
-  fail "✗ $* failed — migrations need the native schema engine from binaries.prisma.sh.\
-\n   Run it from a network-enabled environment; for local schema tweaks use 'npm run db:push'."
+  PRISMA=$(find_prisma) || fail "Prisma CLI not found — run bun install / npm install first."
+  log "→ $PRISMA migration $*"
+  "$PRISMA" migration "$@" || fail "✗ prisma migration $* failed — see diagnostics above."
 }
 
 prisma_status() {
@@ -142,22 +109,16 @@ prisma_status() {
   log "──────────────────────────────────────────────────────────────"
 
   if PRISMA=$(find_prisma); then
-    VERSION=$("$PRISMA" --version 2>/dev/null | tr '\n' ' ' | sed 's/  */ /g')
-    if [ -n "$VERSION" ]; then
-      log "CLI              : $VERSION"
-    else
-      log "CLI              : installed, but every command aborts (engine download blocked)"
-    fi
+    VERSION=$("$PRISMA" --version 2>/dev/null | sed -n 's/.*"version":"\([^"]*\)".*/\1/p' | head -1)
+    log "CLI              : prisma ${VERSION:-unknown} (@prisma/orm-sqlite $(node -p "require('./node_modules/@prisma/orm-sqlite/package.json').version" 2>/dev/null || echo '?'))"
   else
     log "CLI              : not installed (run bun install / npm install)"
   fi
 
-  log "engine download  : $(if "$(find_prisma || echo prisma)" generate --help >/dev/null 2>&1; then echo 'reachable (binaries.prisma.sh works)'; else echo 'BLOCKED — binaries.prisma.sh unreachable; the committed client is used'; fi)"
-
-  if client_is_present; then
-    log "committed client : $GENERATED_DIR ($(find "$GENERATED_DIR" -name '*.ts' | wc -l | tr -d ' ') files, $(du -sh "$GENERATED_DIR" 2>/dev/null | cut -f1))"
+  if contract_is_present; then
+    log "contract         : $CONTRACT_DIR/contract.prisma ($(wc -c <"$CONTRACT_DIR/contract.json" | tr -d ' ') byte contract.json)"
   else
-    log "committed client : MISSING — run: sh scripts/prisma.sh generate"
+    log "contract         : MISSING — run: sh scripts/prisma.sh emit"
   fi
 
   if [ -f "$DB_FILE" ]; then
@@ -174,14 +135,14 @@ prisma_status() {
 }
 
 case "${1:-status}" in
-  generate | gen) prisma_generate ;;
-  push | db-push) prisma_push ;;
+  emit | generate | gen) prisma_emit ;;
+  verify | status-db) prisma_verify ;;
+  update | push | db-push) prisma_update ;;
   seed | db-seed) prisma_seed ;;
-  migrate) shift; prisma_migrate migrate dev "$@" ;;
-  reset) shift; prisma_migrate migrate reset "$@" ;;
+  migrate) shift; prisma_migrate "$@" ;;
   status | -s) prisma_status ;;
   *)
-    log "Usage: sh scripts/prisma.sh generate|push|seed|migrate|reset|status"
+    log "Usage: sh scripts/prisma.sh emit|verify|update|seed|migrate|status"
     exit 1
     ;;
 esac

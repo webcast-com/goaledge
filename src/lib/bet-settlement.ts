@@ -10,7 +10,7 @@
  *   - mix of won + void       → bet partial
  */
 
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { DbClient } from "@/lib/db";
 
 interface BetLeg {
   tipId: string;
@@ -29,18 +29,17 @@ function parseLegs(legs: string): BetLeg[] {
 }
 
 /** Re-evaluate and settle a single bet based on its legs' tip statuses. */
-export async function settleBet(db: PrismaClient, betId: string) {
-  const bet = await db.placedBet.findUnique({ where: { id: betId } });
+export async function settleBet(db: DbClient, betId: string) {
+  const bet = await db.orm.PlacedBet.first({ id: betId });
   if (!bet || bet.status !== "pending") return;
 
   const legs = parseLegs(bet.legs);
   if (legs.length === 0) return;
 
   const tipIds = Array.from(new Set(legs.map((l) => l.tipId)));
-  const tips = await db.tip.findMany({
-    where: { id: { in: tipIds } },
-    select: { id: true, status: true },
-  });
+  const tips = await db.orm.Tip.where((t) => t.id.in(tipIds))
+    .select("id", "status")
+    .all();
   const statusById = new Map(tips.map((t) => [t.id, t.status]));
 
   const results = legs.map((l) => {
@@ -80,12 +79,12 @@ export async function settleBet(db: PrismaClient, betId: string) {
     data.settledAt = new Date();
   }
 
-  await db.placedBet.update({ where: { id: bet.id }, data });
+  await db.orm.PlacedBet.where({ id: bet.id }).update(data);
 }
 
 /** Settle every pending bet that includes the given tip. */
-export async function settleBetsForTip(db: PrismaClient, tipId: string) {
-  const pendingBets = await db.placedBet.findMany({ where: { status: "pending" } });
+export async function settleBetsForTip(db: DbClient, tipId: string) {
+  const pendingBets = await db.orm.PlacedBet.where({ status: "pending" }).all();
   const affected = pendingBets.filter((bet) =>
     parseLegs(bet.legs).some((l) => l.tipId === tipId)
   );

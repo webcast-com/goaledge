@@ -1762,3 +1762,41 @@ Stage Summary:
 - Prisma "8" (8.0.0-rc.13) is the new unified Prisma CLI / Prisma Next RC — no `generate`, `db push`
   or stable @prisma/client 8.x — so upgrading is a data-layer migration, not a version bump.
   Documented and left for an explicit decision.
+
+## Task 17 — Prisma Next (Prisma 8) migration
+
+User asked to "update Prisma version to 8" (Prisma 7 was failing on their machine) and, when asked,
+chose the real migration over a document-only answer.
+
+- Research first: Prisma "8" is the **Prisma Next** line (`prisma@8.0.0-rc.13`) — a unified CLI with
+  `contract`/`db`/`orm`/`migration` commands, **no `prisma generate`, no `db push`**, and no stable
+  `@prisma/client` 8.x. `orm init` only scaffolds Postgres/MongoDB, so the SQLite setup was wired by
+  hand: `@prisma/orm-sqlite@8.0.0-rc.9` runtime + `@prisma/cli-engine` + `prisma@8.0.0-rc.13` CLI.
+- Contract authored at `src/prisma/contract.prisma` for all ten models and compiled to
+  `contract.json`/`contract.d.ts` (`npm run db:emit`); `prisma.config.ts` rewritten for
+  `@prisma/orm-sqlite/config`; `src/prisma/db.ts` exposes the façade and `src/lib/db.ts` re-exports
+  it so routes keep one import path.
+- Rewrote all 83 data-access call sites across 26 files to the ORM (`.where(...).all()`,
+  `.first({ id })`, `.select(...)`, `.create(...)`, `.where(...).update(...)`, `.upsert(...)`,
+  `.aggregate(a => ({ n: a.count() }))`, `.include(...)`), plus the seed, the client script, the
+  compose chain, `.env` docs, ESLint ignores and `serverExternalPackages`.
+- SQLite target constraints handled explicitly: no `Boolean` (contract uses `Int` 0|1 with boundary
+  mapping), no `cuid()`/`uuid()` default generators (ids come from `src/lib/ids.ts`), and
+  `@@map("<Model>")` on every model so the contract matches the PascalCase tables the Prisma 7
+  schema created.
+- Deleted the superseded Prisma 7 artefacts (`src/generated/prisma/`, `prisma/schema.prisma`, the
+  stray `prisma/db/custom.db`) and the `@prisma/client`/`@prisma/adapter-libsql`/`@libsql/client`
+  dependencies.
+- Verification: 50/50 vitest tests pass (test doubles rewritten against a shared ORM fake in
+  `src/test-support/orm-fake.ts`), eslint 0 errors, tsc clean apart from pre-existing socket.io and
+  FakeBet errors, seed runs offline under Bun, and the dev server serves / (200), /api/tips
+  (source: database), /api/admin/stats (93 tips / 3 users), /api/performance, /api/newsletter,
+  /api/settings/api-key and /sitemap.xml against the untouched `db/custom.db`.
+- Known and documented: `prisma db verify`/`db sign` report differences inherited from the old DDL
+  (timestamp column affinity, auto-index names, no contract marker); queries do not need the marker.
+
+Stage Summary:
+- The app now runs on Prisma Next (Prisma 8 RC) against the same SQLite file, with the contract as
+  the single source of truth and no CLI step required to boot.
+- Remaining risk: the runtime is a release candidate; `@prisma/orm-sqlite` prints an experimental
+  warning and the driver requires Node >= 22.5 or a bun with `node:sqlite` (verified on bun 1.4.2).

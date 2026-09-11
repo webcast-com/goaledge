@@ -16,10 +16,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
-    const user = await db.user.findUnique({
-      where: { email },
-      select: { id: true, email: true, name: true, referralCode: true },
-    });
+    const user = await db.orm.User.where({ email })
+      .select("id", "email", "name", "referralCode")
+      .first();
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
@@ -29,27 +28,27 @@ export async function GET(request: NextRequest) {
       const { generateReferralCode } = await import("@/lib/referrals");
       let code = generateReferralCode();
       for (let attempt = 0; attempt < 5; attempt++) {
-        const clash = await db.user.findUnique({ where: { referralCode: code } });
+        const clash = await db.orm.User.where({ referralCode: code }).first();
         if (!clash) break;
         code = generateReferralCode();
       }
-      await db.user.update({ where: { id: user.id }, data: { referralCode: code } });
+      await db.orm.User.where({ id: user.id }).update({ referralCode: code });
       user.referralCode = code;
     }
 
-    const referrals = await db.referral.findMany({
-      where: { referrerId: user.id },
-      include: {
-        referred: { select: { name: true, email: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    const referrals = await db.orm.Referral.where({ referrerId: user.id })
+      .include("referred", (r) => r.select("name", "email"))
+      .orderBy((r) => r.createdAt.desc())
+      .all();
 
     // Count premium days earned from rewarded referrals.
-    const rewards = await db.payment.findMany({
-      where: { userId: user.id, plan: "referral_reward", status: "completed" },
-      select: { amount: true, createdAt: true },
-    });
+    const rewards = await db.orm.Payment.where({
+      userId: user.id,
+      plan: "referral_reward",
+      status: "completed",
+    })
+      .select("amount", "createdAt")
+      .all();
 
     const stats = {
       total: referrals.length,

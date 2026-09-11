@@ -27,8 +27,7 @@ export async function GET() {
         // "demo tips" without any visible error.
         try {
           for (const tip of tips) {
-            await db.tip.upsert({
-              where: { id: tip.id },
+            await db.orm.Tip.where({ id: tip.id }).upsert({
               create: {
                 id: tip.id,
                 league: tip.league,
@@ -44,7 +43,7 @@ export async function GET() {
                 confidenceLabel: tip.confidenceLabel,
                 status: "upcoming",
                 tipster: tip.tipster,
-                isPremium: tip.isPremium,
+                isPremium: tip.isPremium ? 1 : 0,
               },
               update: {
                 league: tip.league,
@@ -78,11 +77,10 @@ export async function GET() {
     }
 
     // Fallback: check DB first, then seed (featured board = upcoming only)
-    const dbTips = await db.tip.findMany({
-      where: { status: "upcoming" },
-      orderBy: { createdAt: "desc" },
-      take: 12,
-    });
+    const dbTips = await db.orm.Tip.where({ status: "upcoming" })
+      .orderBy((t) => t.createdAt.desc())
+      .limit(12)
+      .all();
 
     if (dbTips.length > 0) {
       const formatted: GeneratedTip[] = dbTips.map((t) => ({
@@ -100,7 +98,7 @@ export async function GET() {
         confidenceLabel: t.confidenceLabel,
         status: t.status,
         tipster: t.tipster,
-        isPremium: t.isPremium,
+        isPremium: t.isPremium === 1,
         homeTeamCrest: "",
         awayTeamCrest: "",
         matchId: 0,

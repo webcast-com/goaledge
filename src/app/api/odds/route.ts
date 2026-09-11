@@ -19,12 +19,11 @@ export async function GET(request: NextRequest) {
 
     let tips: OddsComparableTip[] = [];
     try {
-      const dbTips = await db.tip.findMany({
-        where: { status: "upcoming" },
-        orderBy: { createdAt: "desc" },
-        take: 20,
-        select: { id: true, odds: true, homeTeam: true, awayTeam: true, prediction: true },
-      });
+      const dbTips = await db.orm.Tip.where({ status: "upcoming" })
+        .orderBy((t) => t.createdAt.desc())
+        .limit(20)
+        .select("id", "odds", "homeTeam", "awayTeam", "prediction")
+        .all();
       tips = dbTips.map((t) => ({
         id: t.id,
         odds: t.odds,
@@ -50,10 +49,9 @@ export async function GET(request: NextRequest) {
       let tip = tips.find((t) => t.id === tipId);
       if (!tip) {
         try {
-          const dbTip = await db.tip.findUnique({
-            where: { id: tipId },
-            select: { id: true, odds: true, homeTeam: true, awayTeam: true, prediction: true },
-          });
+          const dbTip = await db.orm.Tip.where({ id: tipId })
+            .select("id", "odds", "homeTeam", "awayTeam", "prediction")
+            .first();
           if (dbTip) tip = dbTip;
         } catch {
           // ignore

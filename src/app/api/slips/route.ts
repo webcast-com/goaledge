@@ -66,20 +66,18 @@ export async function POST(request: NextRequest) {
     // Collision-safe: try a few slugs before failing
     let slug = generateSlug();
     for (let attempt = 0; attempt < 5; attempt++) {
-      const existing = await db.sharedSlip.findUnique({ where: { slug } });
+      const existing = await db.orm.SharedSlip.first({ slug });
       if (!existing) break;
       slug = generateSlug();
     }
 
-    const slip = await db.sharedSlip.create({
-      data: {
-        slug,
-        email,
-        legs: JSON.stringify(legs),
-        stake,
-        totalOdds,
-        potentialReturn,
-      },
+    const slip = await db.orm.SharedSlip.create({
+      slug,
+      email,
+      legs: JSON.stringify(legs),
+      stake,
+      totalOdds,
+      potentialReturn,
     });
 
     return NextResponse.json(

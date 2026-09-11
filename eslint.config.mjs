@@ -47,8 +47,9 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
 }, {
   ignores: [
     "node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "examples/**", "skills",
-    // Prisma client generated into the repo — see prisma/schema.prisma
-    "src/generated/**",
+    // Prisma contract artefacts generated into the repo — see src/prisma/contract.prisma
+    "src/prisma/contract.d.ts",
+    "src/prisma/contract.json",
   ]
 }];
 

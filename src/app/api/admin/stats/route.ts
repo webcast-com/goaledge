@@ -12,13 +12,13 @@ export async function GET() {
       totalUsers,
       premiumUsers,
     ] = await Promise.all([
-      db.tip.count(),
-      db.tip.count({ where: { status: "won" } }),
-      db.tip.count({ where: { status: "lost" } }),
-      db.tip.count({ where: { status: "void" } }),
-      db.user.count(),
-      db.user.count({ where: { plan: "premium" } }),
-    ]);
+      db.orm.Tip.aggregate((a) => ({ n: a.count() })),
+      db.orm.Tip.where({ status: "won" }).aggregate((a) => ({ n: a.count() })),
+      db.orm.Tip.where({ status: "lost" }).aggregate((a) => ({ n: a.count() })),
+      db.orm.Tip.where({ status: "void" }).aggregate((a) => ({ n: a.count() })),
+      db.orm.User.aggregate((a) => ({ n: a.count() })),
+      db.orm.User.where({ plan: "premium" }).aggregate((a) => ({ n: a.count() })),
+    ]).then((rows) => rows.map((r) => r.n));
 
     // Calculate win rate (excluding void tips from denominator)
     const resolvedTips = wonCount + lostCount;

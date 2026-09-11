@@ -24,17 +24,18 @@ export async function GET(request: NextRequest) {
     }
 
     const [bets, total] = await Promise.all([
-      db.placedBet.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        take: Math.min(limit, 100),
-        skip: offset,
-      }),
-      db.placedBet.count({ where }),
+      db.orm.PlacedBet.where(where)
+        .orderBy((b) => b.createdAt.desc())
+        .limit(Math.min(limit, 100))
+        .offset(offset)
+        .all(),
+      db.orm.PlacedBet.where(where)
+        .aggregate((a) => ({ n: a.count() }))
+        .then((r) => r.n),
     ]);
 
     // Calculate summary stats
-    const allUserBets = await db.placedBet.findMany({ where: { email } });
+    const allUserBets = await db.orm.PlacedBet.where({ email }).all();
     const totalStaked = allUserBets.reduce((sum, b) => sum + b.stake, 0);
     const wonBets = allUserBets.filter((b) => b.status === "won");
     const totalReturned = wonBets.reduce((sum, b) => sum + b.potentialReturn, 0);

@@ -22,21 +22,20 @@ export async function POST(request: NextRequest) {
 
     const normalizedEmail = email.toLowerCase()
 
-    // Use $queryRaw to bypass potential Turbopack model caching issues
-    const existing = await db.$queryRawUnsafe(
-      `SELECT id FROM Newsletter WHERE email = '${normalizedEmail.replace(/'/g, "''")}' LIMIT 1`
-    ) as Array<{ id: number }>
+    const existing = await db.orm.Newsletter.where({ email: normalizedEmail }).first()
 
-    if (existing.length > 0) {
+    if (existing) {
       return NextResponse.json(
         { success: true, message: 'Successfully subscribed!' },
         { status: 200 }
       )
     }
 
-    await db.$executeRawUnsafe(
-      `INSERT INTO Newsletter (email, "subscribedAt", active) VALUES ('${normalizedEmail.replace(/'/g, "''")}', datetime('now'), 1)`
-    )
+    await db.orm.Newsletter.create({
+      email: normalizedEmail,
+      subscribedAt: new Date(),
+      active: 1,
+    })
 
     return NextResponse.json(
       { success: true, message: 'Welcome aboard! Check your email.' },
@@ -53,8 +52,8 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const result = await db.$queryRawUnsafe('SELECT COUNT(*) as count FROM Newsletter') as Array<{ count: number }>
-    return NextResponse.json({ subscribers: result[0]?.count ?? 0 })
+    const result = await db.orm.Newsletter.aggregate((a) => ({ count: a.count() }))
+    return NextResponse.json({ subscribers: result.count })
   } catch {
     return NextResponse.json({ subscribers: 0 })
   }
