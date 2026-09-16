@@ -65,9 +65,14 @@ export function PaymentFlowModal({
 
       setPaymentRef(data.reference);
 
-      // 2. Real Paystack popup — used when NEXT_PUBLIC_PAYSTACK_KEY is configured.
+      // 2. Real Paystack popup — only when the server actually initialised a
+      // live transaction. mode === "live" tells us PAYSTACK_SECRET_KEY is set;
+      // a configured public key on its own is not enough (initialize ran in
+      // demo mode, so the reference is unknown to Paystack and the charge
+      // could not be verified). In that half-configured state, fall through
+      // to the demo simulation instead of opening a broken popup.
       const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_KEY;
-      if (publicKey) {
+      if (publicKey && data.mode === "live") {
         try {
           await new Promise<void>((resolve, reject) => {
             const existing = document.getElementById("paystack-inline-script");

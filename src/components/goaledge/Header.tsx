@@ -243,12 +243,12 @@ export function Header({
                 }`}
               >
                 <Bell className="h-4 w-4" />
-                {3 > 0 && (
+                {notifications.length > 0 && (
                   <span
                     className="animate-notif-badge absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-white dark:ring-slate-900"
                     aria-hidden="true"
                   >
-                    3
+                    {notifications.length}
                   </span>
                 )}
               </button>
@@ -511,9 +511,9 @@ export function Header({
               aria-label="Notifications"
             >
               <Bell className="h-4 w-4" />
-              {3 > 0 && (
+              {notifications.length > 0 && (
                 <span className="animate-notif-badge absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-white dark:ring-slate-900">
-                  3
+                  {notifications.length}
                 </span>
               )}
             </button>
