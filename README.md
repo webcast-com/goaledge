@@ -162,6 +162,8 @@ npm run db:seed          # idempotent; runs under bun or node
 | Symptom | Meaning / fix |
 | ------- | ------------- |
 | `Cannot find module 'node:sqlite'` | the runtime is older than Node 22.5 / a bun without `node:sqlite` (verified on bun 1.4.2) |
+| `prisma migrate deploy` / `migrate dev` fails with `CLI.UNKNOWN_COMMAND … did you mean migration` | Prisma Next has no `prisma migrate` family — there are **no migration files by design**. Remove `migrate` steps from build/deploy scripts; apply contract changes with `npm run db:push` (`prisma db update`) |
+| `prisma migration status` reports `No migrations found` | expected, not an error — contract-first repos keep schema history in git (`contract.json`), not in `prisma/migrations/` |
 | `prisma contract emit` fails with `CONTRACT.SOURCE_LOAD_FAILED` | a PSL feature the SQLite target does not support — see the diagnostics it prints (no `Boolean`, no `@default(cuid())`, no `@updatedAt`) |
 | `prisma db verify` reports `Marker missing` / schema differences | the shipped `db/custom.db` was created by the old Prisma 7 schema, so timestamp column affinity and auto-index names differ. Queries are unaffected — the app does not need the marker |
 | `db update` / `db init` | apply contract changes to the database (there is no `db push`); back up `db/custom.db` first |
