@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { FadeIn } from "@/components/goaledge/animations";
-import { Flame, ShieldCheck, Rocket, Ticket } from "lucide-react";
+import { Flame, ShieldCheck, Rocket, Shuffle, Ticket } from "lucide-react";
 import type { Tip } from "@/types/goaledge";
 
 /* ------------------------------------------------------------------ */
@@ -36,17 +36,28 @@ function matchKey(tip: Tip): string {
   return `${tip.homeTeam}::${tip.awayTeam}`;
 }
 
+function shuffle<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// Draw from the top WINDOW candidates of each tier instead of the strict
+// top-3: tiers keep their identity (short / balanced / big prices) while the
+// shuffle button still produces visibly different teams each click.
+const WINDOW = 6;
+
 function buildAccas(tips: Tip[]): Acca[] {
   // Upcoming tips first; fall back to the full board if statuses are absent.
   const pool = tips.filter((t) => !t.status || t.status === "upcoming");
   const used = new Set<string>();
 
-  const take = (
-    sorted: Tip[],
-    count: number,
-  ): Tip[] => {
+  const take = (sorted: Tip[], count: number): Tip[] => {
+    const window = shuffle(sorted.slice(0, Math.min(WINDOW, sorted.length)));
     const picked: Tip[] = [];
-    for (const tip of sorted) {
+    for (const tip of window) {
       if (picked.length >= count) break;
       const key = matchKey(tip);
       if (used.has(key)) continue;
@@ -74,7 +85,7 @@ function buildAccas(tips: Tip[]): Acca[] {
     .sort((a, b) => oddsOf(b) - oddsOf(a));
   const longshot = take(byLong, 3);
 
-  return [
+  const themes = [
     {
       key: "banker",
       name: "Banker Acca",
@@ -84,7 +95,6 @@ function buildAccas(tips: Tip[]): Acca[] {
       numeral: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
       oddsChip: "text-emerald-600 ring-emerald-200 dark:text-emerald-400 dark:ring-emerald-800",
       button: "bg-gradient-to-b from-emerald-500 to-emerald-600 shadow-emerald-500/20 hover:from-emerald-500 hover:to-emerald-700 hover:shadow-emerald-500/40",
-      legs: banker,
     },
     {
       key: "value",
@@ -95,7 +105,6 @@ function buildAccas(tips: Tip[]): Acca[] {
       numeral: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
       oddsChip: "text-amber-600 ring-amber-200 dark:text-amber-400 dark:ring-amber-800",
       button: "bg-gradient-to-b from-amber-500 to-orange-500 shadow-amber-500/20 hover:from-amber-500 hover:to-orange-600 hover:shadow-amber-500/40",
-      legs: value,
     },
     {
       key: "longshot",
@@ -106,9 +115,22 @@ function buildAccas(tips: Tip[]): Acca[] {
       numeral: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400",
       oddsChip: "text-sky-600 ring-sky-200 dark:text-sky-400 dark:ring-sky-800",
       button: "bg-gradient-to-b from-sky-500 to-sky-600 shadow-sky-500/20 hover:from-sky-500 hover:to-sky-700 hover:shadow-sky-500/40",
-      legs: longshot,
     },
-  ].filter((a) => a.legs.length >= 2);
+  ];
+
+  // Assign tiers by the realised combined odds, so the labels always read
+  // correctly no matter how the shuffle lands: lowest = Banker, middle =
+  // Value, highest = Longshot.
+  const combos = [banker, value, longshot]
+    .map((legs) => ({
+      legs,
+      combined: legs.reduce((acc, leg) => acc * oddsOf(leg), 1),
+    }))
+    .sort((a, b) => a.combined - b.combined);
+
+  return combos
+    .map((combo, i) => ({ ...themes[i], legs: combo.legs }))
+    .filter((a) => a.legs.length >= 2);
 }
 
 export function AccumulatorOfTheDay({
@@ -118,7 +140,10 @@ export function AccumulatorOfTheDay({
   tips: Tip[];
   onAddToSlip: (tip: Tip) => void;
 }) {
-  const accas = useMemo(() => buildAccas(tips), [tips]);
+  // Shuffle is a manual regenerate: bumping shuffleId re-runs buildAccas,
+  // which draws a fresh random window of teams per tier.
+  const [shuffleId, setShuffleId] = useState(0);
+  const accas = useMemo(() => buildAccas(tips), [tips, shuffleId]);
 
   if (accas.length === 0) return null;
 
@@ -126,17 +151,26 @@ export function AccumulatorOfTheDay({
     <section className="bg-white px-4 py-16 sm:px-6 dark:bg-slate-900/70">
       <div className="mx-auto max-w-6xl">
         <FadeIn>
-          <div className="mb-6">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:ring-amber-800">
-              <Flame className="h-3.5 w-3.5" /> Hot picks
-            </span>
-            <h2 className="section-heading mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
-              Today&apos;s accumulators
-            </h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Three ready-built combos from today&apos;s board — different
-              teams, different risk levels. Add any of them in one click.
-            </p>
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:ring-amber-800">
+                <Flame className="h-3.5 w-3.5" /> Hot picks
+              </span>
+              <h2 className="section-heading mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+                Today&apos;s accumulators
+              </h2>
+              <p className="mt-1 max-w-xl text-sm text-slate-500 dark:text-slate-400">
+                Three ready-built combos from today&apos;s board — different
+                teams, different risk levels. Add any of them in one click.
+              </p>
+            </div>
+            <button
+              onClick={() => setShuffleId((s) => s + 1)}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition-all hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-amber-600 dark:hover:bg-amber-950/20 dark:hover:text-amber-400"
+              title="Regenerate all three accumulators with different teams"
+            >
+              <Shuffle className="h-4 w-4" /> Shuffle accas
+            </button>
           </div>
         </FadeIn>
 
@@ -148,7 +182,8 @@ export function AccumulatorOfTheDay({
             );
             const potentialReturn = Math.round(combinedOdds * 100);
             return (
-              <FadeIn key={acca.key} delay={0.1 + accaIndex * 0.08}>
+              // Remount on shuffle so the entrance animation replays.
+              <FadeIn key={`${acca.key}:${shuffleId}`} delay={0.1 + accaIndex * 0.08}>
                 <div className="acca-card-hover flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-b from-slate-50/50 to-white dark:border-slate-700 dark:from-slate-900 dark:to-slate-900">
                   {/* Acca header */}
                   <div className={`flex items-center justify-between px-5 py-3.5 text-white ${acca.header}`}>
