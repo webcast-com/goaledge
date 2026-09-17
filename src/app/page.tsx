@@ -115,7 +115,6 @@ export default function HomePage() {
 
   const [bookmarkedTips, setBookmarkedTips] = useState<Set<string>>(new Set());
 
-  const [heroScrollY, setHeroScrollY] = useState(0);
   const [accType, setAccType] = useState<BetType>("acca");
   const [eachWay, setEachWay] = useState(false);
   const [freeBetMode, setFreeBetMode] = useState(false);
@@ -184,9 +183,7 @@ export default function HomePage() {
   // Scroll detection for sticky header + parallax
   useEffect(() => {
     const handleScroll = () => {
-      const scrollY = window.scrollY;
-      setScrolled(scrollY > 20);
-      if (scrollY < 800) setHeroScrollY(scrollY);
+      setScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
@@ -597,7 +594,7 @@ export default function HomePage() {
 
       <main className="flex-1 pb-20 sm:pb-0">
         {/* ==================== HERO ==================== */}
-        <Hero heroScrollY={heroScrollY} onSetAuthMode={setAuthMode} onSetAuthOpen={setAuthOpen} />
+        <Hero onSetAuthMode={setAuthMode} onSetAuthOpen={setAuthOpen} />
 
         {/* ==================== HOW IT WORKS ==================== */}
         <HowItWorks />

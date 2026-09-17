@@ -68,7 +68,9 @@ src/lib/db.ts                   re-export used by the app (db.orm.<Model>)
   runs. `postinstall` does it automatically; run it manually when iterating.
 
 ## External services (all optional)
-- **Paystack** (payments): runs in demo mode without keys.
+- **Paystack** (payments): runs in demo mode without keys. Set `PAYSTACK_SECRET_KEY` and
+  `NEXT_PUBLIC_PAYSTACK_KEY` as a pair (or neither) in the host env — never commit an `sk_live_...`
+  key; `.env` is git-ignored and GitHub push protection rejects pushes containing live secrets.
 - **football-data.org** (live fixtures): falls back to seed data without a key.
 - **socket.io odds service** (`mini-services/odds-service`): optional realtime odds; the app
   works without it (falls back to seed/static odds). Not started by the Base44 compose.

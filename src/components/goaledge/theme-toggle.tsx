@@ -9,8 +9,8 @@ export function ThemeToggle({ className }: { className?: string }) {
 
   return (
     // contrast-audit-ignore: the default classes below are only ever rendered on
-    // dark surfaces (transparent header over the hero, on-dark mobile drawer);
-    // light-mode call sites pass their own `className`.
+    // dark surfaces (the on-dark mobile drawer). Every other call site — header
+    // scrolled or not — passes an explicit light/dark-aware `className`.
     <button
       className={`relative flex h-9 w-9 items-center justify-center rounded-lg border transition ${
         className ?? "border-white/20 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"

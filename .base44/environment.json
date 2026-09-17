@@ -5,12 +5,12 @@
   "secrets": [
     {
       "name": "PAYSTACK_SECRET_KEY",
-      "description": "Paystack secret key for live payments (sk_test_...). Optional — app runs in demo mode without it.",
+      "description": "Paystack secret key for live payments (sk_live_... or sk_test_...). Optional — app runs in demo mode without it. Set it here, never in git: GitHub push protection rejects commits containing sk_live keys.",
       "requiredAtBoot": false
     },
     {
       "name": "NEXT_PUBLIC_PAYSTACK_KEY",
-      "description": "Paystack public key for live checkout (pk_test_...). Optional — app runs in demo mode without it.",
+      "description": "Paystack public key for live checkout (pk_live_... or pk_test_...). Optional — app runs in demo mode without it. Set BOTH keys or neither: a mismatched pair mixes live + demo behaviour.",
       "requiredAtBoot": false
     },
     {

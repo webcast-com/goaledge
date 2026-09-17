@@ -128,7 +128,7 @@ export function Header({
         className={`sticky top-0 z-40 border-b transition-all duration-300 ${
           scrolled
             ? "border-slate-200/80 bg-white/90 shadow-sm backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/90"
-            : "border-white/10 bg-transparent backdrop-blur-md"
+            : "border-slate-200/80 bg-white/90 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/0 dark:backdrop-blur-md"
         }`}
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
@@ -136,17 +136,9 @@ export function Header({
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/30 transition-transform hover:scale-105">
               <TrendingUp className="h-5 w-5 text-white" />
             </span>
-            <span
-              className={`text-lg font-bold tracking-tight transition-colors ${
-                scrolled
-                  ? "text-slate-900 dark:text-white"
-                  : "text-white"
-              }`}
-            >
+            <span className="text-lg font-bold tracking-tight text-slate-900 transition-colors dark:text-white">
               Goal
-              <span className={scrolled ? "text-emerald-600 dark:text-emerald-400" : "text-emerald-400"}>
-                Edge
-              </span>
+              <span className="text-emerald-600 dark:text-emerald-400">Edge</span>
             </span>
             {/* API Status Indicator — clickable to open settings */}
             <button
@@ -215,7 +207,7 @@ export function Header({
                       ? "font-semibold text-emerald-600 underline underline-offset-4 decoration-emerald-600/60 dark:text-emerald-400 dark:decoration-emerald-400/60"
                       : scrolled
                         ? "font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-                        : "font-medium text-white/70 hover:bg-white/10 hover:text-white"
+                        : "font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white"
                   }`
                 }
                 >
@@ -233,7 +225,7 @@ export function Header({
               className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
                 scrolled
                   ? "text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
-                  : "text-white/70 hover:bg-white/10 hover:text-white"
+                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white"
               }`}
               title="Search tips (⌘K)"
             >
@@ -247,16 +239,16 @@ export function Header({
                 className={`relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
                   scrolled
                     ? "text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
-                    : "text-white/70 hover:bg-white/10 hover:text-white"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white"
                 }`}
               >
                 <Bell className="h-4 w-4" />
-                {3 > 0 && (
+                {notifications.length > 0 && (
                   <span
                     className="animate-notif-badge absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-white dark:ring-slate-900"
                     aria-hidden="true"
                   >
-                    3
+                    {notifications.length}
                   </span>
                 )}
               </button>
@@ -365,7 +357,7 @@ export function Header({
               className={
                 scrolled
                   ? "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                  : undefined
+                  : "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
               }
             />
             {session ? (
@@ -472,14 +464,18 @@ export function Header({
                   className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-xl px-4 text-sm font-semibold transition-all active:translate-y-0 ${
                     scrolled
                       ? "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                      : "text-white/80 hover:bg-white/10 hover:text-white"
+                      : "text-slate-700 hover:bg-slate-100 dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
                   }`}
                 >
                   Sign in
                 </button>
                 <button
                   onClick={() => onSetBetSlipOpen(true)}
-                  className="relative rounded-xl p-2 text-slate-500 transition-all hover:bg-slate-100 hover:text-emerald-600 dark:hover:bg-slate-800 dark:hover:text-emerald-400"
+                  className={`relative rounded-xl p-2 transition-all ${
+                    scrolled
+                      ? "text-slate-500 hover:bg-slate-100 hover:text-emerald-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-emerald-400"
+                      : "text-slate-500 hover:bg-slate-100 hover:text-emerald-600 dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-emerald-400"
+                  }`}
                   aria-label="Open bet slip"
                 >
                   <Ticket className="h-4 w-4" />
@@ -510,14 +506,14 @@ export function Header({
               className={`relative flex h-9 w-9 items-center justify-center rounded-lg border transition ${
                 scrolled
                   ? "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                  : "border-white/20 bg-white/5 text-white/80 hover:bg-white/10"
+                  : "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white/80 dark:hover:bg-white/10"
               }`}
               aria-label="Notifications"
             >
               <Bell className="h-4 w-4" />
-              {3 > 0 && (
+              {notifications.length > 0 && (
                 <span className="animate-notif-badge absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-white dark:ring-slate-900">
-                  3
+                  {notifications.length}
                 </span>
               )}
             </button>
@@ -526,7 +522,7 @@ export function Header({
               className={`relative flex h-9 w-9 items-center justify-center rounded-lg border transition ${
                 scrolled
                   ? "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                  : "border-white/20 bg-white/5 text-white/80 hover:bg-white/10"
+                  : "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white/80 dark:hover:bg-white/10"
               }`}
               aria-label="Open bet slip"
             >
@@ -542,7 +538,7 @@ export function Header({
               className={`flex h-9 w-9 items-center justify-center rounded-lg border transition ${
                 scrolled
                   ? "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                  : "border-white/20 bg-white/5 text-white/80 hover:bg-white/10"
+                  : "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200 dark:border-white/20 dark:bg-white/5 dark:text-white/80 dark:hover:bg-white/10"
               }`}
               aria-label="Open menu"
             >
