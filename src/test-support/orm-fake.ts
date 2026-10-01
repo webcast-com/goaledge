@@ -1,10 +1,10 @@
 /**
- * Minimal in-memory stand-in for the Prisma Next ORM surface used by the
+ * Minimal in-memory stand-in for the app's database query surface used by
  * unit tests. It implements just enough of `db.orm.<Model>` — `where`, `select`,
  * `include`, `orderBy`, `limit`/`offset`, `first`, `all`, `create`, `update`,
  * `delete` and `aggregate` — to drive the lib helpers without a database.
  *
- * Keep this in step with `src/prisma/db.ts`: if a helper starts using another
+ * Keep this in step with `src/lib/db.ts`: if a helper starts using another
  * operator or terminal verb, add it here rather than weakening the test.
  */
 
@@ -220,7 +220,7 @@ function makeBranch(): unknown {
 
 type Collection = ReturnType<typeof makeCollection>;
 
-/** Build a `db` object shaped like the Prisma Next client. */
+/** Build a `db` object shaped like the app's database client. */
 export function makeOrmDb(stores: Record<string, ModelStore>) {
   const orm: Record<string, Collection> = {};
   for (const [model, store] of Object.entries(stores)) {

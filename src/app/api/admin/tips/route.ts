@@ -198,12 +198,12 @@ async function seedHistoricalTips() {
 
   if (existingHistory === 0) {
     const historicalTips = getHistoricalSeedTips();
-    // The SQLite target has no createMany; insert row by row.
+    // Insert one row at a time so a single invalid historical record is reported clearly.
     for (const tip of historicalTips) {
       await db.orm.Tip.create({
         ...tip,
         id: newId(),
-        isPremium: tip.isPremium ? 1 : 0, // Boolean is Int(0|1) on SQLite
+        isPremium: tip.isPremium ? 1 : 0, // Stored as Int(0|1) to preserve the API contract
       });
     }
     return historicalTips;
@@ -244,7 +244,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (isPremium !== null && isPremium !== undefined && isPremium !== "") {
-      where.isPremium = isPremium === "true" ? 1 : 0; // Boolean is Int(0|1) on SQLite
+      where.isPremium = isPremium === "true" ? 1 : 0; // Stored as Int(0|1) to preserve the API contract
     }
 
     const tips = await db.orm.Tip.where(where)
@@ -343,7 +343,7 @@ export async function POST(request: NextRequest) {
       confidence: confidenceNum,
       confidenceLabel,
       tipster,
-      isPremium: isPremium ? 1 : 0, // Boolean is Int(0|1) on SQLite
+      isPremium: isPremium ? 1 : 0, // Stored as Int(0|1) to preserve the API contract
       analysis: analysis || null,
     });
 

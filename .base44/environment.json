@@ -4,18 +4,33 @@
   "startCommand": "docker compose -f docker-compose.base44.yml up -d",
   "secrets": [
     {
+      "name": "SUPABASE_URL",
+      "description": "Supabase project URL required for database-backed app features.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "SUPABASE_SECRET_KEY",
+      "description": "Server-only Supabase secret key. Keep private; never add a NEXT_PUBLIC_ prefix or commit it.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "SUPABASE_SERVICE_ROLE_KEY",
+      "description": "Legacy alternative to SUPABASE_SECRET_KEY for server-side database access; keep private.",
+      "requiredAtBoot": false
+    },
+    {
       "name": "PAYSTACK_SECRET_KEY",
-      "description": "Paystack secret key for live payments (sk_test_...). Optional — app runs in demo mode without it.",
+      "description": "Paystack secret key for live payments (sk_live_... or sk_test_...). Optional; the app uses demo mode without it. Set in the host secrets store, never in git.",
       "requiredAtBoot": false
     },
     {
       "name": "NEXT_PUBLIC_PAYSTACK_KEY",
-      "description": "Paystack public key for live checkout (pk_test_...). Optional — app runs in demo mode without it.",
+      "description": "Paystack public key for live checkout (pk_live_... or pk_test_...). Optional; set both Paystack keys as a matching pair, or leave both unset for demo mode.",
       "requiredAtBoot": false
     },
     {
       "name": "FOOTBALL_API_KEY",
-      "description": "football-data.org API key for live fixture data. Optional — app falls back to seed data without it.",
+      "description": "football-data.org API key for live fixture data. Optional \u2014 app falls back to seed data without it.",
       "requiredAtBoot": false
     },
     {
@@ -25,7 +40,7 @@
     },
     {
       "name": "AUTH_SECRET",
-      "description": "Signs the session cookie (HS256). Optional — a dev secret is used if unset.",
+      "description": "Signs the session cookie (HS256). Optional \u2014 a dev secret is used if unset.",
       "requiredAtBoot": false
     }
   ]

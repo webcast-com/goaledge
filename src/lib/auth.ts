@@ -16,8 +16,8 @@
  * GET /api/auth/session for the user object.
  */
 
-// Server-only: imports Prisma/bcryptjs and touches cookies. Client code should
-// use the session context in src/lib/session-context.tsx instead.
+// Server-only: reads the Supabase-backed user store, imports bcryptjs, and
+// touches cookies. Client code should use session-context.tsx instead.
 
 import bcrypt from "bcryptjs";
 import type { NextResponse } from "next/server";
@@ -114,8 +114,8 @@ export async function findUserByEmail(
     if (asTyped) return asTyped;
   }
 
-  // Legacy rows may differ in case: SQLite's LIKE is case-insensitive for
-  // ASCII, matching the LOWER(email) = LOWER(?) lookup this replaces.
+  // Legacy imported rows may differ in case; the Postgres ilike filter keeps
+  // the old case-insensitive email lookup behavior.
   const folded = await db.orm.User.where((u) => u.email.like(normalized))
     .select(...userFields)
     .first();

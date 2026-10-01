@@ -297,6 +297,56 @@
   }
 }
 
+/* Hero entrance — pure CSS so it starts at first paint instead of waiting
+   for hydration (the old framer-motion FadeIn kept the hero invisible until
+   JS loaded). Stagger comes from inline animation-delay. */
+.hero-rise {
+  animation: hero-rise 0.7s cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
+}
+
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Rotating headline word — the wrapper reserves the longest word's width so
+   the headline never reflows; each word animates in as React swaps it. */
+.word-rotator {
+  display: inline-block;
+  min-width: 11.5ch;
+  text-align: left;
+  vertical-align: bottom;
+}
+
+.word-rotator-word {
+  display: inline-block;
+  animation: word-rotator-in 0.45s ease-out both;
+}
+
+@keyframes word-rotator-in {
+  from {
+    opacity: 0;
+    transform: translateY(45%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-rise,
+  .word-rotator-word {
+    animation: none !important;
+  }
+}
+
 /* Gradient text animation */
 .gradient-animate {
   background-size: 200% 200%;

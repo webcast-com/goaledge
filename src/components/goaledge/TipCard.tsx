@@ -58,7 +58,7 @@ export function TipCard({
 
   return (
     <div
-      className="tip-card tip-card-glass group relative flex cursor-pointer flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/[0.03] transition-all duration-200 hover:-translate-y-1 hover:scale-[1.01] hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-900/[0.06] dark:border-slate-700 dark:bg-slate-900 dark:hover:border-emerald-500"
+      className="tip-card tip-card-glass group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/[0.03] transition-all duration-200 hover:-translate-y-1 hover:scale-[1.01] hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-900/[0.06] dark:border-slate-700 dark:bg-slate-900 dark:hover:border-emerald-500"
       onClick={onView}
     >
       {/* Header */}
@@ -274,8 +274,13 @@ export function TipCard({
         </div>
       )}
 
+      {/* Spacer pins the footer to the bottom when a grid row stretch makes
+          this card taller than its content (0-height when heights are even,
+          so even rows render exactly as before) */}
+      <div className="flex-1" aria-hidden="true" />
+
       {/* Footer */}
-      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-y-2 border-t border-slate-100 pt-3 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
             by {tip.tipster}

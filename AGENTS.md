@@ -1,88 +1,34 @@
-# Base44 Dev Environment
+# GoalEdge project notes
 
 ## Stack
-- **Next.js 16** (App Router, Turbopack) + TypeScript + Tailwind 4 + shadcn/ui
-- **Prisma Next — Prisma 8 RC** (`prisma@8.0.0-rc.13`, `@prisma/orm-sqlite@8.0.0-rc.9`) with
-  SQLite (`db/custom.db`). Contract-first: `src/prisma/contract.prisma` compiles to
-  `contract.json` + `contract.d.ts`, and `src/prisma/db.ts` exposes the client. The SQLite façade
-  talks to the file through Node's built-in `node:sqlite` driver
-- **Bun** is the package manager (`bun.lock` is the source of truth)
-- **Framer Motion** for animations, **Recharts** for charts
+- **Next.js 16 App Router**, TypeScript, Tailwind CSS 4, shadcn/ui, Framer Motion.
+- **Supabase Postgres** through `@supabase/supabase-js` and the server-only compatibility data layer in `src/lib/db.ts`.
+- **Bun** is the package manager (`bun.lock` is the source of truth); Node.js 22+ is also supported.
 
 ## Running the app
 ```bash
-docker compose -f docker-compose.base44.yml up -d
+bun install
+bun run dev
 ```
-- Web service on **port 3000** (`next dev --webpack` with live reload).
-  **Prefer `--webpack` over the default Turbopack**: the SQLite façade is kept external via
-  `serverExternalPackages` in `next.config.ts` (webpack verified working end to end).
-- The compose command chains: `bun install` → `bun run db:emit` → `bun run db:seed` →
-  `bunx next dev --webpack`. `db:emit` recompiles the contract (only needed after editing it);
-  the committed `contract.json`/`contract.d.ts` mean the app boots without any Prisma CLI step.
-- **bun must implement `node:sqlite`** — the driver behind the façade. Verified on bun 1.4.2;
-  keep the image at `oven/bun:1` (or newer) rather than pinning an older 1.2.x.
-- Source is bind-mounted at `/app`; `node_modules` is an anonymous volume (isolated from host).
+The dev server uses port 3000. Supabase credentials are required for database-backed flows; API handlers with graceful fallbacks may still render without them. `docker-compose.base44.yml` starts the dev server but does not seed or mutate a hosted database on startup.
 
 ## Database
-- SQLite file at `db/custom.db` (already committed with data). `prisma.config.ts` and
-  `src/prisma/db.ts` both resolve it from the project root.
-- `prisma/seed.mjs` is idempotent — safe to run repeatedly; it runs under bun or node.
-- `DATABASE_URL` must be a `file:` URL. `src/prisma/db.ts` and `prisma.config.ts` ignore a
-  non-file scheme (the repo used to ship an old Prisma Postgres URL) and fall back to
-  `file:<root>/db/custom.db`.
-- **Boolean is not a SQLite PSL type in Prisma Next.** `Tip.isPremium` and `Newsletter.active` are
-  `Int` (0|1) in the contract; convert at the boundaries (`x ? 1 : 0` on write,
-  `=== 1` / `Boolean(x)` on read) so API JSON keeps returning `true`/`false`.
-- **String ids are app-generated.** The SQLite target has no `cuid()`/`uuid()` execution
-  generators, so create calls pass `id: newId()` from `src/lib/ids.ts`. `Newsletter.id` is the one
-  autoincrement column and needs no id.
-- **Storage names.** Every model carries `@@map("<Model>")` so the contract matches the PascalCase
-  tables created by the old Prisma 7 schema. SQLite identifiers are case-insensitive, but keeping
-  the mapping exact avoids surprises.
-- `prisma db verify` / `db sign` report differences inherited from that Prisma 7 DDL (timestamp
-  column affinity, auto-index names) — the app does not need the marker, and queries work unsigned.
+- Set `SUPABASE_URL` and either `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY` in the server environment. `NEXT_PUBLIC_SUPABASE_URL` is accepted as a URL fallback; database keys must never use the `NEXT_PUBLIC_` prefix.
+- `src/lib/db.ts` is the only app data-access layer. It uses Supabase's Data API and maps the existing `db.orm.<Model>` calls to PostgREST. Do not import the secret-backed database module in client components.
+- Postgres tables/columns use `snake_case`; the adapter translates to/from the app's existing PascalCase model and camelCase field names. Date/time columns are converted to `Date` objects.
+- `Tip.isPremium` and `Newsletter.active` remain integer flags (`0` or `1`) to preserve existing API behavior.
+- SQL schema and RLS/grants live in `supabase/migrations/`. Add schema changes as a new timestamped SQL migration; apply with `supabase db push` after linking the CLI to the target project.
+- `npm run db:seed` adds idempotent demo tips and backfills missing referral codes. `npm run db:import:sqlite` imports the legacy `db/custom.db` once; it also carries password hashes and app settings, so only run it for a project you control.
+- The Supabase secret/service-role key bypasses RLS and is trusted. RLS is enabled with no browser-role policies; keep all DB access on the server.
 
-## Prisma Next workflow (contract-first)
-Prisma 8 is the Prisma Next RC line: there is no `prisma generate`, no `prisma db push`, and no
-generated client in `node_modules`. Everything flows from the contract:
+## Other notes
+- External football data (football-data.org), Paystack, and the Socket.IO odds service are optional. Configure both Paystack keys as a matching pair or leave both unset; never commit live keys, and keep `.env` local/ignored.
+- `AUTH_SECRET` should be set to a random value in production; app authentication remains the existing bcrypt + signed HttpOnly session cookie flow, not Supabase Auth.
+- `next.config.ts` derives `allowedDevOrigins` from `BASE44_PUBLIC_HOST_SUFFIX` for Arena/Base44 preview hosts.
 
-```
-src/prisma/contract.prisma      authored models (PSL)
-  ↓  sh scripts/prisma.sh emit  (bun run db:emit)
-src/prisma/contract.json        compiled contract (committed)
-src/prisma/contract.d.ts        typed contract (committed)
-src/prisma/db.ts                the client: sqlite<Contract>({ contractJson, path })
-src/lib/db.ts                   re-export used by the app (db.orm.<Model>)
-```
-
-- Query surface: `db.orm.Tip.where({...}).orderBy(t => t.createdAt.desc()).limit(12).all()`,
-  `.first({ id })`, `.select("id","status")`, `.create({...})`, `.where({...}).update({...})`,
-  `.where({...}).delete()`, `.where({...}).upsert({ create, update })`,
-  `.aggregate(a => ({ n: a.count() }))`, `db.transaction(async (tx) => …)`.
-- After editing the contract run `bun run db:emit`; commit `contract.json` and `contract.d.ts`.
-- Schema changes go to the database with `prisma db update` (`bun run db:push` is mapped to it).
-  Back up `db/custom.db` first — there is no `db push --accept-data-loss` safety net here.
-- `scripts/prisma.sh` wraps it all (`emit`, `verify`, `update`, `seed`, `migrate`, `status`) and works
-  offline: the v8 CLI is pure JavaScript, so it never reaches `binaries.prisma.sh`.
-- **No Next.js plugin exists** for Prisma Next — a contract edit is not picked up until `db:emit`
-  runs. `postinstall` does it automatically; run it manually when iterating.
-
-## External services (all optional)
-- **Paystack** (payments): runs in demo mode without keys.
-- **football-data.org** (live fixtures): falls back to seed data without a key.
-- **socket.io odds service** (`mini-services/odds-service`): optional realtime odds; the app
-  works without it (falls back to seed/static odds). Not started by the Base44 compose.
-- **AUTH_SECRET**: a dev secret is used if unset.
-
-## Next.js config quirks
-- **`serverExternalPackages`** — `@prisma/orm-sqlite` is listed so the bundler leaves the façade
-  (and its `node:sqlite` import) to Node at runtime.
-- **`allowedDevOrigins`** — derived from `BASE44_PUBLIC_HOST_SUFFIX` at runtime so the preview's
-  external origin can load dev assets/HMR. Without this, Next.js returns 403 for `_next/static`
-  requests from the preview host.
-
-## Verifying it works
+## Verification
 ```bash
-curl -sf http://localhost:3000/                       # should return 200 + HTML
-docker compose -f docker-compose.base44.yml logs web   # dev server logs
+bun run lint
+bun run test
+bun run build
 ```

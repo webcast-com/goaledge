@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // The DB is only used to look up a stored API key — no key here, so the library
 // must fall back to FOOTBALL_API_KEY from the environment.
 vi.mock("@/lib/db", () => ({
-  db: { appSetting: { findUnique: async () => null } },
+  db: { orm: { AppSetting: { first: async () => null } } },
 }));
 
 process.env.FOOTBALL_API_KEY = "test-key-1234";

@@ -1,26 +1,22 @@
 /**
  * GoalEdge database seed
  * ----------------------
- * Seeds the SQLite database with:
+ * Seeds the Supabase database with:
  *   1. Six upcoming tips (the same fixtures the API falls back to)
  *   2. Ten settled tips (won/lost/void) so the track record & stats sections
  *      have real data from day one
  *
  * Idempotent — safe to run repeatedly (upserts by fixed ids).
  *
- * Usage: npm run db:seed   (or: npx prisma db seed)
+ * Usage: npm run db:seed
  */
-// Prisma Next (Prisma 8) seed. The contract artefacts are committed under
-// src/prisma, so this runs without the Prisma CLI. The client is the SQLite
-// façade from @prisma/orm-sqlite; it uses the Node built-in `node:sqlite`
-// driver, so run it with Node >= 22.5 (or Bun >= 1.2). scripts/prisma.sh seed
-// picks the runtime.
+// Idempotent seed data is written through the same Supabase data layer as the app.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-// Load .env before the client is created — Node does not read it automatically
-// the way Bun does, and the SQLite façade resolves its file path at import time.
+// Load .env before importing the database module — Node does not read .env
+// automatically, and the Supabase client needs the server credentials.
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 try {
   const envFile = fs.readFileSync(path.join(projectRoot, ".env"), "utf8");
@@ -31,10 +27,10 @@ try {
     if (process.env[match[1]] === undefined) process.env[match[1]] = value;
   }
 } catch {
-  // No .env — fall back to the default db/custom.db path.
+  // No .env file — credentials must be provided by the environment.
 }
 
-const { db } = await import("../src/prisma/db.ts");
+const { db } = await import("../src/lib/db.ts");
 
 function fmtDate(offsetDays, hour) {
   const d = new Date();

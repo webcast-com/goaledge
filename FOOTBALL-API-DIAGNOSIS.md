@@ -1,7 +1,10 @@
 # Why the API returns a league table but no matches
 
 Investigation of "the API is not getting matches, but it gets the league's table",
-what the code was doing, and what changed to fix it.
+what the code was doing, and what changed to fix it. This report predates the
+Supabase migration: references below to `db/custom.db` and SQLite describe the
+legacy deployment used during that investigation; current application data is in
+Supabase Postgres.
 
 ---
 
@@ -112,7 +115,7 @@ Routes / UI
 Tests: `src/lib/football-api.test.ts` (10 cases — keeps `TIMED`, drops
 `FINISHED`/`IN_PLAY`, sorts + limits, full week window, no negative caching, no
 per-league hammering on an empty window, per-league fallback after a 403, key
-reporting, 403 and network-error notes). Full suite: 50 tests pass, ESLint 0 errors.
+reporting, 403 and network-error notes). Full suite: 55 tests pass, ESLint has no errors (as of the Supabase migration).
 
 ---
 

@@ -1,6 +1,6 @@
 # GoalEdge — Smarter Football Predictions
 
-A football prediction & betting tips platform built with **Next.js 16 (App Router)**, **TypeScript**, **Tailwind CSS 4**, **shadcn/ui**, **Prisma Next + SQLite**, and **Framer Motion**.
+A football prediction & betting tips platform built with **Next.js 16 (App Router)**, **TypeScript**, **Tailwind CSS 4**, **shadcn/ui**, **Supabase Postgres**, and **Framer Motion**.
 
 ## Features
 
@@ -24,7 +24,7 @@ A football prediction & betting tips platform built with **Next.js 16 (App Route
 | Framework  | Next.js 16 (App Router, Turbopack, standalone)     |
 | Language   | TypeScript                                         |
 | Styling    | Tailwind CSS 4 + shadcn/ui                         |
-| Database   | SQLite via Prisma Next (`db/custom.db`)            |
+| Database   | Supabase-hosted Postgres via `@supabase/supabase-js` |
 | Auth       | Built-in: bcrypt passwords + signed HS256 session cookie ([details](#authentication)) |
 | Payments   | Paystack (initialize / verify / webhook)           |
 | Data       | football-data.org API (optional, with seed fallback) |
@@ -35,33 +35,39 @@ A football prediction & betting tips platform built with **Next.js 16 (App Route
 
 ```bash
 # 1. Install dependencies
-npm install          # or: bun install
+bun install          # or: npm install
 
-# 2. Configure environment
-cp .env.example .env # see Environment variables below
+# 2. Configure the Supabase project
+cp .env.example .env # set SUPABASE_URL and a server-only Supabase key
 
-# 3. Set up the database
-npx prisma generate
-npm run db:push      # create tables (SQLite file: db/custom.db)
+# 3. Install the Supabase CLI, log in, and link this checkout to your project
+supabase login
+supabase link --project-ref <your-project-ref>
+npm run db:push      # apply supabase/migrations to the linked project
 npm run db:seed      # seed upcoming + historical tips (idempotent)
 
 # 4. Run
 npm run dev          # http://localhost:3000
 ```
 
-> **Bun note:** this project also ships a `bun.lock`. Either package manager works; `npm install` will create a `package-lock.json` (gitignored — `bun.lock` is the source of truth).
+The app talks to Supabase Postgres through the Supabase Data API. It does not use `DATABASE_URL` or Supabase Auth; the existing app-owned email/password sessions remain unchanged. See [Supabase database](#supabase-database) for setup and legacy SQLite import details.
+
+> **Package manager:** `bun.lock` is the source of truth. `npm install` also works, but its generated `package-lock.json` is gitignored.
 
 ## Environment variables
 
 | Variable                  | Required | Purpose                                                        |
 | ------------------------- | -------- | -------------------------------------------------------------- |
-| `DATABASE_URL`            | ✅       | SQLite path (default `file:./db/custom.db`; a non-`file:` URL is ignored — the app falls back to the bundled DB) |
+| `SUPABASE_URL`            | ✅       | Supabase project URL (or use `NEXT_PUBLIC_SUPABASE_URL` on the server) |
+| `SUPABASE_SECRET_KEY`     | ✅       | Server-only Supabase secret key; legacy projects can use `SUPABASE_SERVICE_ROLE_KEY`. Never expose either in browser code. |
 | `PAYSTACK_SECRET_KEY`     | ❌       | Real Paystack charges; **absent = demo checkout**              |
 | `NEXT_PUBLIC_PAYSTACK_KEY`| ❌       | Paystack inline popup in the browser (needs secret too)        |
 | `FOOTBALL_API_KEY`        | ❌       | football-data.org key (or save it in Admin → API Key panel — **a saved key wins over this variable**) |
 | `FOOTBALL_API_MIN_INTERVAL_MS` | ❌ | Pause between football-data.org calls (default `6100` ≈ free tier's 10 req/min; lower it on a paid plan) |
 | `AFFILIATE_URL_TEMPLATE`  | ❌       | Tracked affiliate links for the odds comparison (see below)    |
 | `AUTH_SECRET`             | ❌       | Signs the session cookie (a dev default is used if unset — set it in prod). The legacy `NEXTAUTH_SECRET` is still honoured, so existing sessions survive the upgrade |
+
+Keep `.env` local and git-ignored. Never commit live Paystack or Supabase credentials; put them in your deployment's secrets store. For Paystack, configure matching public and secret keys together, or leave both unset for demo mode. GitHub push protection rejects commits containing live Paystack secret keys.
 
 ## Scripts
 
@@ -72,11 +78,9 @@ npm run dev          # http://localhost:3000
 | `npm run start`   | Serve the standalone build (`bun .next/standalone/server.js`) |
 | `npm run lint`    | ESLint                                             |
 | `npm test`        | Vitest unit tests (`src/**/*.test.ts`)             |
-| `npm run db:emit` | Compile `src/prisma/contract.prisma` → `contract.json` + `contract.d.ts` |
-| `npm run db:verify` | Check the database against the contract        |
-| `npm run db:push` | Apply contract changes to the database (`prisma db update`) |
-| `npm run db:seed` | Seed tips (idempotent; needs Bun or Node ≥ 22.18)  |
-| `npm run db:status` | Print CLI/contract/database/runtime status      |
+| `npm run db:push` | Apply SQL migrations from `supabase/migrations` (Supabase CLI; project must be linked) |
+| `npm run db:seed` | Seed upcoming + historical tips (idempotent)       |
+| `npm run db:import:sqlite` | Import the legacy `db/custom.db` into Supabase (one-time migration) |
 
 ## API routes
 
@@ -146,30 +150,43 @@ Two gotchas that bit this app:
    `dateTo` as *exclusive*. The client now requests a date window with no status filter
    and keeps `SCHEDULED` + `TIMED` locally.
 
-## Prisma troubleshooting (Prisma Next / Prisma 8)
+## Supabase database
 
-GoalEdge runs **Prisma Next** — the Prisma 8 line, currently `8.0.0-rc.13` — against SQLite. There is
-no generated client and no `prisma generate` / `prisma db push` any more; the contract in
-`src/prisma/contract.prisma` is compiled into `contract.json` + `contract.d.ts` and the app queries
-through `@prisma/orm-sqlite` (driver: Node's built-in `node:sqlite`).
+GoalEdge stores application data in **Supabase Postgres**. `src/lib/db.ts` is the server-side data
+access layer; it calls Supabase's Data API with `@supabase/supabase-js`. The app continues to use its
+own password/session-cookie authentication—Supabase Auth is not enabled or required.
 
-```bash
-npm run db:status        # CLI, contract artefacts, database file, runtime
-npm run db:emit          # after editing src/prisma/contract.prisma
-npm run db:seed          # idempotent; runs under bun or node
-```
+1. Create a Supabase project and copy its project URL plus a server-side **Secret key** (or the
+   legacy `service_role` key) into `.env` as `SUPABASE_URL` and `SUPABASE_SECRET_KEY`.
+2. Install the [Supabase CLI](https://supabase.com/docs/guides/cli), then link the project:
+
+   ```bash
+   supabase login
+   supabase link --project-ref <your-project-ref>
+   npm run db:push       # applies supabase/migrations/*.sql
+   npm run db:seed       # optional demo tips and referral-code backfill
+   ```
+
+The migration enables row-level security on every app table and grants no browser-role access.
+Only the server-side secret/service-role key can reach these tables. **Never use a `NEXT_PUBLIC_`
+key for database writes or commit a Supabase secret.** `SUPABASE_URL` can be replaced with
+`NEXT_PUBLIC_SUPABASE_URL` if that is how your deployment exposes the project URL; the key must
+remain private.
+
+The old SQLite file is retained as a one-time import source. To copy its data into an empty Supabase
+project after applying the migration, run `npm run db:import:sqlite` with Node 22 or newer. The
+import includes account password hashes and app settings, so only run it against a Supabase project
+you control. Re-running it is idempotent by record id/unique key.
 
 | Symptom | Meaning / fix |
 | ------- | ------------- |
-| `Cannot find module 'node:sqlite'` | the runtime is older than Node 22.5 / a bun without `node:sqlite` (verified on bun 1.4.2) |
-| `prisma contract emit` fails with `CONTRACT.SOURCE_LOAD_FAILED` | a PSL feature the SQLite target does not support — see the diagnostics it prints (no `Boolean`, no `@default(cuid())`, no `@updatedAt`) |
-| `prisma db verify` reports `Marker missing` / schema differences | the shipped `db/custom.db` was created by the old Prisma 7 schema, so timestamp column affinity and auto-index names differ. Queries are unaffected — the app does not need the marker |
-| `db update` / `db init` | apply contract changes to the database (there is no `db push`); back up `db/custom.db` first |
-| API returns `isPremium: 0/1` instead of `true/false` | SQLite has no `Boolean` type — the contract stores `Int` and the routes map it at the boundary (see `src/app/api/tips/route.ts`) |
-| `DATABASE_URL` warning on every query | set `DATABASE_URL="file:./db/custom.db"` — a Postgres URL cannot work with the SQLite target |
+| `[db] Set SUPABASE_URL...` | Add your project's URL to `.env` or the deployment environment. |
+| `[db] Set SUPABASE_SECRET_KEY...` | Add a server-side secret key or legacy service-role key. Do not use the publishable/anon key. |
+| `Invalid API key` / `permission denied` | Check that the key belongs to this project and has server-side access; confirm `npm run db:push` was applied. |
+| `Could not find the table ... in the schema cache` | Apply the committed migration with `npm run db:push`, then retry after PostgREST refreshes its schema cache. |
 
-The compiled contract is committed so the app boots with no CLI step at all; re-run `npm run db:emit`
-and commit the two artefacts whenever the contract changes.
+Schema edits belong in a new, timestamped SQL file under `supabase/migrations/`; apply it to the
+linked project with `npm run db:push`.
 
 ## Authentication
 
@@ -231,7 +248,7 @@ casing, which other tables reference).
 ## Payment modes
 
 - **Demo mode** (no `PAYSTACK_SECRET_KEY`): checkout is simulated — the modal auto-verifies after 2 seconds and premium activates. Good for testing the full flow.
-- **Live mode** (keys set): real Paystack `initialize`/`verify` calls, the Paystack inline popup in the browser, and HMAC-SHA512 webhook signature verification.
+- **Live mode** (matching public and secret keys set): real Paystack `initialize`/`verify` calls, the Paystack inline popup in the browser, and HMAC-SHA512 webhook signature verification. Configure both keys or neither; never commit live credentials.
 
 Amounts are Ksh; Paystack expects them in cents (`amount * 100`, currency `KES`).
 
@@ -264,7 +281,7 @@ The app is installable: `src/app/manifest.ts` (manifest), `public/sw.js` (offlin
 
 ## Tests & CI
 
-Unit tests live next to the code (`src/lib/*.test.ts`) and run with Vitest (`npm test`). The GitHub Actions workflow (`.github/workflows/ci.yml`) runs install → prisma generate/validate → lint → test → build on every push and PR.
+Unit tests live next to the code (`src/lib/*.test.ts`) and run with Vitest (`npm test`). Before deploying, run `npm run lint`, `npm test`, and `npm run build`.
 
 ## Tip settlement
 
@@ -296,7 +313,7 @@ npm run build        # .next/standalone + static + public
 npm run start        # serves on port 3000
 ```
 
-Any Node 18+ host works (VPS, Railway, Render, Fly.io…). The `Caddyfile` in the repo proxies port 3000 and forwards `XTransformPort` websocket ports (e.g. the 3004 odds service). For production, switch `DATABASE_URL` to a shared volume-backed SQLite file (or move to a Postgres deployment with Prisma Next's Postgres target).
+Use Node.js 22 or newer (required by the current Supabase SDK). Configure `SUPABASE_URL` and a server-only `SUPABASE_SECRET_KEY`/`SUPABASE_SERVICE_ROLE_KEY` in your host's environment. The `Caddyfile` proxies port 3000 and forwards `XTransformPort` websocket ports (e.g. the 3004 odds service); Supabase provides the shared production database.
 
 ## Project structure
 
@@ -317,10 +334,13 @@ src/
     auth.ts               # Server auth: passwords, session cookie, current user
     session-token.ts      # HS256 sign/verify for the session token (Web Crypto)
     session-context.tsx   # Client SessionProvider + useSession()/useAuth()
+    db.ts                  # Supabase server-side data access
   types/goaledge.ts       # Shared types
+supabase/migrations/       # Postgres schema migrations
+scripts/seed.mjs           # Idempotent Supabase demo-data seed
+scripts/import-sqlite.mjs  # One-time import from the legacy SQLite file
 mini-services/odds-service # socket.io live odds streamer
 examples/websocket/        # Minimal socket.io chat example
-prisma/seed.mjs            # Database seed (npm run db:seed)
 ```
 
 ## Disclaimer
