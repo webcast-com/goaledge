@@ -21,8 +21,8 @@ export async function GET() {
       if (matches.length > 0) {
         const tips = generateTipsFromMatches(matches);
 
-        // Store real tips in DB for persistence. Kept in its own try/catch: a DB
-        // hiccup (locked SQLite file, missing table, …) must not throw the whole
+        // Store real tips in Supabase for persistence. Kept in its own try/catch:
+        // a DB/network hiccup or missing table must not throw the whole
         // route into the seed fallback — that is how "live matches" turned into
         // "demo tips" without any visible error.
         try {

@@ -136,7 +136,7 @@ export async function rewardReferrerForPayment(
     .include("referrer", (r) => r.select("id", "email"))
     .first();
 
-  if (!referral || referral.status !== "pending") {
+  if (!referral || referral.status !== "pending" || !referral.referrer) {
     return { rewarded: false, rewardDays: 0 };
   }
 

@@ -6,10 +6,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  // Prisma Next's SQLite façade talks to the database through Node's built-in
-  // `node:sqlite` driver. Keeping the package external stops the bundler from
-  // rewriting its dynamic requires and the `node:` import.
-  serverExternalPackages: ["@prisma/orm-sqlite"],
   allowedDevOrigins: [
     "http://127.0.0.1:3000",
     "http://localhost:3000",

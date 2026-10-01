@@ -1,13 +1,12 @@
 import { randomUUID } from "node:crypto";
 
 /**
- * Generate a primary-key string for models whose `id` has no database-side
- * default. Prisma Next's SQLite target does not ship `cuid()` / `uuid()`
- * generators (they are execution generators the SQLite driver does not
- * implement), so ids are created in the application.
+ * Generate primary-key strings for models whose ids are assigned by the app
+ * rather than a database identity column. Keeping ids app-generated also makes
+ * them stable across the legacy SQLite import and the Supabase Postgres store.
  *
- * Format: 25 chars, URL-safe, collision-resistant — a drop-in for the cuid v1
- * strings the existing rows (and the Prisma 7 seed) use.
+ * Format: 25 chars, URL-safe, collision-resistant — compatible with the cuid v1
+ * strings already present in imported data.
  */
 const ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyz";
 

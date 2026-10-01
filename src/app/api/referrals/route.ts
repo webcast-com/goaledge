@@ -72,8 +72,8 @@ export async function GET(request: NextRequest) {
         qualifiedAt: r.qualifiedAt,
         rewardedAt: r.rewardedAt,
         referred: {
-          name: r.referred.name,
-          email: r.referred.email ? maskEmail(r.referred.email) : null,
+          name: r.referred?.name ?? null,
+          email: r.referred?.email ? maskEmail(r.referred.email) : null,
         },
       })),
     });

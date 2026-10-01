@@ -6,17 +6,17 @@
  * by talking to football-data.org directly, with the same key the app uses.
  *
  * Usage (from the project root):
- *   node scripts/football-api-check.mjs                 # DB key, else FOOTBALL_API_KEY
+ *   node scripts/football-api-check.mjs                 # Supabase key, else FOOTBALL_API_KEY
  *   node scripts/football-api-check.mjs --key=xxxxxxxx  # try a specific key
  *   node scripts/football-api-check.mjs --delay=0       # don't wait between calls
  *   node scripts/football-api-check.mjs --base=http://localhost:4010   # against a mock
  *   docker compose exec web bun scripts/football-api-check.mjs
  *
- * No dependencies: reads .env by hand and db/custom.db with node:sqlite
- * (skipped when the runtime has no node:sqlite, e.g. Bun).
+ * Reads `.env` by hand, then looks for the saved AppSetting in Supabase.
  */
 
 import { readFileSync, existsSync } from "node:fs";
+import { createClient } from "@supabase/supabase-js";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -33,32 +33,38 @@ const EXPLICIT_KEY = argv.get("key");
 const BASE_URL = argv.get("base") ?? "https://api.football-data.org/v4";
 
 // ── Key resolution (mirrors getApiKey() in src/lib/football-api.ts) ──────
-function readEnvFileKey() {
-  const path = resolve(ROOT, ".env");
-  if (!existsSync(path)) return null;
-  for (const line of readFileSync(path, "utf8").split("\n")) {
-    const match = /^\s*FOOTBALL_API_KEY\s*=\s*(.+?)\s*$/.exec(line);
-    if (match) return match[1].replace(/^["']|["']$/g, "");
+function loadEnvFile() {
+  const envPath = resolve(ROOT, ".env");
+  if (!existsSync(envPath)) return;
+  for (const line of readFileSync(envPath, "utf8").split("\n")) {
+    const match = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/.exec(line);
+    if (!match || process.env[match[1]] !== undefined) continue;
+    process.env[match[1]] = match[2].replace(/^["']|["']$/g, "");
   }
+}
+
+function readEnvFileKey() {
   return process.env.FOOTBALL_API_KEY ?? null;
 }
 
 async function readDatabaseKey() {
-  const dbPath = resolve(ROOT, "db/custom.db");
-  if (!existsSync(dbPath)) return { key: null, error: "db/custom.db not found" };
-  // node:sqlite is still flagged experimental on Node 22 — keep its warning out
-  // of the report so the output stays pasteable.
-  const warningListeners = process.listeners("warning");
-  process.removeAllListeners("warning");
+  const url = process.env.SUPABASE_URL?.trim() || process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key = process.env.SUPABASE_SECRET_KEY?.trim() || process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (!url || !key) return { key: null, error: "Supabase server credentials are not configured" };
+
   try {
-    const { DatabaseSync } = await import("node:sqlite");
-    const db = new DatabaseSync(dbPath);
-    const row = db.prepare("select value from AppSetting where key = 'football_api_key'").get();
-    return { key: row?.value ?? null, error: null };
+    const supabase = createClient(url, key, {
+      auth: { autoRefreshToken: false, detectSessionInUrl: false, persistSession: false },
+    });
+    const { data, error } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "football_api_key")
+      .maybeSingle();
+    if (error) return { key: null, error: error.message };
+    return { key: data?.value ?? null, error: null };
   } catch (err) {
     return { key: null, error: err instanceof Error ? err.message : String(err) };
-  } finally {
-    for (const listener of warningListeners) process.on("warning", listener);
   }
 }
 
@@ -118,6 +124,7 @@ const isoDate = (offsetDays = 0) => {
 };
 
 // ── Main ─────────────────────────────────────────────────────────────────
+loadEnvFile();
 const envKey = readEnvFileKey();
 const db = await readDatabaseKey();
 const effectiveKey = EXPLICIT_KEY || db.key || envKey;

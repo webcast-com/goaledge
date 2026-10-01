@@ -1,9 +1,7 @@
 # Base44 dev environment — runs the app from cloned source with live reload.
-# The app is a Next.js 16 + Prisma Next (Prisma 8) project using bun. It runs in
-# demo mode without external credentials; Paystack/Football API keys are optional.
-#
-# Requires a bun release with `node:sqlite` (the driver behind the Prisma Next
-# SQLite façade) — verified on bun 1.4.2. `oven/bun:1` tracks the latest 1.x.
+# The app uses hosted Supabase for persistence. Set SUPABASE_URL and a
+# server-only SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) in the env file.
+# `oven/bun:1` tracks the latest Bun 1.x release.
 services:
   web:
     image: oven/bun:1
@@ -23,9 +21,7 @@ services:
     env_file:
       - ./.env.base44-defaults
       - /run/base44/app.env
-    # db:emit compiles src/prisma/contract.prisma → contract.json/contract.d.ts
-    # (committed, so this is only needed after a contract change); db:seed is
-    # idempotent. Prisma Next has no `db push`: schema changes go through
-    # `prisma db update` (see README → Prisma Next).
-    command: sh -c "bun install && bun run db:emit && bun run db:seed && bunx next dev --webpack -p 3000"
+    # Apply Supabase migrations/seeds explicitly from a host with the Supabase
+    # CLI and Node.js installed; don't mutate a hosted database at container boot.
+    command: sh -c "bun install && bunx next dev --webpack -p 3000"
     restart: unless-stopped
