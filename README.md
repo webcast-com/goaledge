@@ -86,10 +86,12 @@ Keep `.env` local and git-ignored. Never commit live Paystack or Supabase creden
 
 | Route                          | Purpose                                      |
 | ------------------------------ | -------------------------------------------- |
-| `GET /api/tips`                | Current tips (live → database → seed)        |
+| `GET /api/tips`                | Current tips (football-data.org → ESPN → database → seed) |
 | `GET /api/odds`                | Per-bookmaker odds comparison + affiliate links |
-| `GET /api/fixtures`            | Upcoming / finished fixtures                 |
-| `GET /api/live-scores`         | Live scores                                  |
+| `GET /api/fixtures`            | Fixtures from football-data.org, then ESPN   |
+| `GET /api/live-scores`         | Live scores from football-data.org, then ESPN |
+| `GET /api/espn/leagues`        | ESPN leagues and accepted league codes/slugs |
+| `GET /api/espn/games`          | ESPN games; supports league, date/date range, status, and limit |
 | `GET /api/standings?league=PL` | League standings                             |
 | `GET /api/leagues`             | Competition list                             |
 | `GET /api/performance`         | Stakes, returns, ROI from real bets          |
@@ -111,13 +113,21 @@ Keep `.env` local and git-ignored. Never commit live Paystack or Supabase creden
 | `POST /api/payment/verify`     | Verify a charge & activate premium           |
 | `POST /api/payment/webhook`    | Paystack webhook (HMAC-verified)             |
 | `GET /api/settings/api-key`    | Check football-data key status               |
-| `GET /api/diagnostics/football`| Why live data is (not) showing up: key source, last upstream status/error, cache state. Add `?probe=1` to re-query football-data.org directly |
+| `GET /api/diagnostics/football`| Why football-data.org is (not) working: key source, last upstream status/error, cache state. Add `?probe=1` to re-query it directly |
+
+ESPN's public soccer scoreboard requires no API key. For example:
+
+```text
+/api/espn/games?league=PL&date=2026-10-01&status=all
+/api/espn/games?league=eng.1&dateFrom=2026-10-01&dateTo=2026-10-07&status=upcoming
+```
 
 ## Live data troubleshooting
 
-Live fixtures/standings come from [football-data.org](https://www.football-data.org).
-When a call fails the app **falls back to seed data** (and the standings section has a
-hardcoded sample table), which used to make "no matches" impossible to debug. Now:
+Football-data.org remains the source for standings and is tried first for fixtures,
+tips, and live scores. Those game routes fall back to ESPN's public, keyless soccer
+scoreboard before using seed data. The diagnostics endpoint below probes
+football-data.org only; call `/api/espn/games` directly to inspect ESPN results.
 
 ```bash
 # 1. What the app knows: key source, last upstream status code, cache contents
@@ -134,7 +144,7 @@ Reading the result:
 
 | Symptom | Meaning |
 | ------- | ------- |
-| `"source": "none"` | no key configured — everything is seed data |
+| `"source": "none"` | no football-data.org key is configured; game routes can still use ESPN |
 | status `null` | the request never reached the API (Docker network, blocked egress, DNS, TLS) |
 | `401` / `403` | invalid key, or the plan does not cover that resource |
 | `429` | free-tier rate limit (10 requests/minute) — the app waits 60s and retries once |
@@ -329,6 +339,7 @@ src/
     ui/                   # shadcn/ui primitives
   lib/
     football-api.ts       # football-data.org client + seed data
+    espn-api.ts           # ESPN soccer scoreboard client + fixtures fallback
     odds-comparison.ts    # Bookmaker odds board + affiliate links
     bet-settlement.ts     # Auto-settlement of bet slips
     auth.ts               # Server auth: passwords, session cookie, current user

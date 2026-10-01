@@ -154,7 +154,7 @@ export function Header({
               }`}
               title={
                 apiStatus === "live"
-                  ? `Live data from football-data.org · ${dataSource} · ${tipsCount} matches — Click to manage API key`
+                  ? `Live match data via ${dataSource} · ${tipsCount} matches — Click to manage the football-data.org key`
                   : apiStatus === "seed"
                     ? "Using sample data — Click to add your API key"
                     : apiStatus === "offline"

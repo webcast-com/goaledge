@@ -6,29 +6,44 @@ import {
   getSeedLiveScores,
   getUpstreamNote,
 } from "@/lib/football-api";
+import { getEspnDateWindow, getEspnGames } from "@/lib/espn-api";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    if (await isApiConfigured()) {
+    const configured = await isApiConfigured();
+    if (configured) {
       const liveMatches = await getLiveMatches();
 
       if (liveMatches.length > 0) {
         const liveScores = liveMatches.map(convertToLiveScore);
-
         return NextResponse.json({
           matches: liveScores,
           source: "live",
+          provider: "football-data.org",
           apiConfigured: true,
           count: liveScores.length,
         });
       }
     }
 
-    const configured = await isApiConfigured();
+    // ESPN provides a no-key live scoreboard, so use it before showing demos.
+    try {
+      const { dateFrom, dateTo } = getEspnDateWindow(7);
+      const espnMatches = await getEspnGames({ dateFrom, dateTo, status: "live", limit: 100 });
+      const liveScores = espnMatches.map(convertToLiveScore);
+      return NextResponse.json({
+        matches: liveScores,
+        source: "espn",
+        provider: "ESPN",
+        apiConfigured: configured,
+        count: liveScores.length,
+      });
+    } catch (espnError) {
+      console.warn("[live-scores] ESPN fallback unavailable:", espnError);
+    }
 
-    // Fallback: seed data
     return NextResponse.json({
       matches: getSeedLiveScores(),
       source: configured ? "no_live_matches" : "seed",

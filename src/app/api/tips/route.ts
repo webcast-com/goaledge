@@ -9,13 +9,17 @@ import {
   getUpstreamNote,
   type GeneratedTip,
 } from "@/lib/football-api";
+import { getEspnUpcomingGames, getEspnLeagues } from "@/lib/espn-api";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  let apiConfigured = false;
   try {
+    apiConfigured = await isApiConfigured();
+
     // If API is configured, fetch real data
-    if (await isApiConfigured()) {
+    if (apiConfigured) {
       const matches = await getAllUpcomingMatches(8);
 
       if (matches.length > 0) {
@@ -69,11 +73,34 @@ export async function GET() {
         return NextResponse.json({
           tips,
           source: "live",
+          provider: "football-data.org",
           apiConfigured: true,
           totalAvailable: matches.length,
           competitions,
         });
       }
+    }
+
+    // ESPN's public scoreboard is an unauthenticated fallback for real fixtures.
+    // Prefix its tip IDs so they cannot collide with persisted football-data.org tips.
+    try {
+      const matches = await getEspnUpcomingGames({ limit: 8 });
+      if (matches.length > 0) {
+        const tips = generateTipsFromMatches(matches).map((tip) => ({
+          ...tip,
+          id: `espn_${tip.matchId}`,
+        }));
+        return NextResponse.json({
+          tips,
+          source: "espn",
+          provider: "ESPN",
+          apiConfigured,
+          totalAvailable: matches.length,
+          competitions: getEspnLeagues(),
+        });
+      }
+    } catch (espnError) {
+      console.warn("[tips] ESPN fallback unavailable:", espnError);
     }
 
     // Fallback: check DB first, then seed (featured board = upcoming only)
@@ -108,7 +135,7 @@ export async function GET() {
       return NextResponse.json({
         tips: formatted,
         source: "database",
-        apiConfigured: await isApiConfigured(),
+        apiConfigured,
         note: getUpstreamNote(),
       });
     }
@@ -116,7 +143,7 @@ export async function GET() {
     return NextResponse.json({
       tips: getSeedTips(),
       source: "seed",
-      apiConfigured: await isApiConfigured(),
+      apiConfigured,
       note: getUpstreamNote(),
     });
   } catch (error) {
@@ -126,7 +153,7 @@ export async function GET() {
     return NextResponse.json({
       tips: getSeedTips(),
       source: "fallback",
-      apiConfigured: await isApiConfigured(),
+      apiConfigured,
       note: getUpstreamNote(),
     });
   }
