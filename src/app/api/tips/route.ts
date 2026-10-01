@@ -9,7 +9,6 @@ import {
   getUpstreamNote,
   type GeneratedTip,
 } from "@/lib/football-api";
-import { getEspnUpcomingGames, getEspnLeagues } from "@/lib/espn-api";
 
 export const dynamic = "force-dynamic";
 
@@ -81,27 +80,8 @@ export async function GET() {
       }
     }
 
-    // ESPN's public scoreboard is an unauthenticated fallback for real fixtures.
-    // Prefix its tip IDs so they cannot collide with persisted football-data.org tips.
-    try {
-      const matches = await getEspnUpcomingGames({ limit: 8 });
-      if (matches.length > 0) {
-        const tips = generateTipsFromMatches(matches).map((tip) => ({
-          ...tip,
-          id: `espn_${tip.matchId}`,
-        }));
-        return NextResponse.json({
-          tips,
-          source: "espn",
-          provider: "ESPN",
-          apiConfigured,
-          totalAvailable: matches.length,
-          competitions: getEspnLeagues(),
-        });
-      }
-    } catch (espnError) {
-      console.warn("[tips] ESPN fallback unavailable:", espnError);
-    }
+    // ESPN is intentionally not a tips fallback: its scoreboard provides game
+    // facts, not GoalEdge picks, local bookmaker odds, or confidence values.
 
     // Fallback: check DB first, then seed (featured board = upcoming only)
     const dbTips = await db.orm.Tip.where({ status: "upcoming" })

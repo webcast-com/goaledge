@@ -86,7 +86,7 @@ Keep `.env` local and git-ignored. Never commit live Paystack or Supabase creden
 
 | Route                          | Purpose                                      |
 | ------------------------------ | -------------------------------------------- |
-| `GET /api/tips`                | Current tips (football-data.org → ESPN → database → seed) |
+| `GET /api/tips`                | Current tips (football-data.org → database → seed) |
 | `GET /api/odds`                | Per-bookmaker odds comparison + affiliate links |
 | `GET /api/fixtures`            | Fixtures from football-data.org, then ESPN   |
 | `GET /api/live-scores`         | Live scores from football-data.org, then ESPN |
@@ -124,10 +124,11 @@ ESPN's public soccer scoreboard requires no API key. For example:
 
 ## Live data troubleshooting
 
-Football-data.org remains the source for standings and is tried first for fixtures,
-tips, and live scores. Those game routes fall back to ESPN's public, keyless soccer
-scoreboard before using seed data. The diagnostics endpoint below probes
-football-data.org only; call `/api/espn/games` directly to inspect ESPN results.
+Football-data.org remains the source for standings and tips. Fixtures and live scores
+try football-data.org first, then fall back to ESPN's public, keyless soccer scoreboard.
+ESPN is not used to generate prediction cards because the scoreboard does not provide
+GoalEdge picks, confidence, or reliable local bookmaker odds. The diagnostics endpoint
+below probes football-data.org only; call `/api/espn/games` directly to inspect ESPN results.
 
 ```bash
 # 1. What the app knows: key source, last upstream status code, cache contents
