@@ -292,10 +292,13 @@ export default function HomePage() {
             : `${t.homeTeam} 1-1 ${t.awayTeam} (Last 5: ${t.homeTeam} W2 D2 L1)`,
       }));
       setTips(tipsList);
-      setDataSource(data.source || "unknown");
+      const source = data.source || "unknown";
+      setDataSource(data.provider || source);
       setApiNote(data.note ?? null);
-      if (data.apiConfigured) {
-        setApiStatus(data.source === "live" ? "live" : "seed");
+      if (source === "live" || source === "espn") {
+        setApiStatus("live");
+      } else if (data.apiConfigured) {
+        setApiStatus("seed");
       } else {
         setApiStatus("offline");
       }

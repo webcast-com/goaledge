@@ -991,7 +991,11 @@ export function convertToLiveScore(match: FootballMatch) {
     awayTeam: match.awayTeam,
     homeScore: homeGoals,
     awayScore: awayGoals,
-    minute: match.status === "HALFTIME" ? "HT" : match.minute ? `${match.minute}'` : "",
+    minute: ["HALFTIME", "PAUSED"].includes(match.status)
+      ? "HT"
+      : match.minute
+        ? `${match.minute}'`
+        : "",
     status: "live" as const,
     possession: `${homePoss}% - ${awayPoss}%`,
     shots: `${2 + homeGoals + Math.round(Math.random() * 4)} - ${2 + awayGoals + Math.round(Math.random() * 4)}`,

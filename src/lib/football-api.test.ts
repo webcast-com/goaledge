@@ -15,6 +15,7 @@ const {
   getApiKeyInfo,
   getUpstreamNote,
   getUpstreamAttempts,
+  convertToLiveScore,
 } = await import("@/lib/football-api");
 
 type FetchMock = ReturnType<typeof vi.fn>;
@@ -42,6 +43,28 @@ function mockFetch(status: number, body: unknown): FetchMock {
 function requestedUrl(mock: FetchMock, call = 0): string {
   return String(mock.mock.calls[call]?.[0]);
 }
+
+describe("football-api — live score formatting", () => {
+  it("shows halftime for paused ESPN matches", () => {
+    const liveScore = convertToLiveScore({
+      id: 12345,
+      utcDate: "2026-10-01T18:00:00Z",
+      status: "PAUSED",
+      matchday: 7,
+      homeTeam: "Home FC",
+      awayTeam: "Away FC",
+      homeTeamCrest: "",
+      awayTeamCrest: "",
+      homeScore: 1,
+      awayScore: 0,
+      competition: "Premier League",
+      competitionEmblem: "",
+      competitionCode: "PL",
+    });
+
+    expect(liveScore.minute).toBe("HT");
+  });
+});
 
 describe("football-api — upcoming fixtures", () => {
   beforeEach(() => {

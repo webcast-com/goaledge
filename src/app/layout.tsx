@@ -41,6 +41,9 @@ export const metadata: Metadata = {
     "value bets",
   ],
   authors: [{ name: "GoalEdge" }],
+  verification: {
+    google: "yZq0LXyvBCRWjecIrkfmx5E99Z07XgZVDpyVBYwriKE",
+  },
   icons: {
     icon: "/favicon.svg",
     apple: "/icons/icon-192.png",

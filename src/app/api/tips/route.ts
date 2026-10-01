@@ -13,9 +13,12 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  let apiConfigured = false;
   try {
+    apiConfigured = await isApiConfigured();
+
     // If API is configured, fetch real data
-    if (await isApiConfigured()) {
+    if (apiConfigured) {
       const matches = await getAllUpcomingMatches(8);
 
       if (matches.length > 0) {
@@ -69,12 +72,16 @@ export async function GET() {
         return NextResponse.json({
           tips,
           source: "live",
+          provider: "football-data.org",
           apiConfigured: true,
           totalAvailable: matches.length,
           competitions,
         });
       }
     }
+
+    // ESPN is intentionally not a tips fallback: its scoreboard provides game
+    // facts, not GoalEdge picks, local bookmaker odds, or confidence values.
 
     // Fallback: check DB first, then seed (featured board = upcoming only)
     const dbTips = await db.orm.Tip.where({ status: "upcoming" })
@@ -108,7 +115,7 @@ export async function GET() {
       return NextResponse.json({
         tips: formatted,
         source: "database",
-        apiConfigured: await isApiConfigured(),
+        apiConfigured,
         note: getUpstreamNote(),
       });
     }
@@ -116,7 +123,7 @@ export async function GET() {
     return NextResponse.json({
       tips: getSeedTips(),
       source: "seed",
-      apiConfigured: await isApiConfigured(),
+      apiConfigured,
       note: getUpstreamNote(),
     });
   } catch (error) {
@@ -126,7 +133,7 @@ export async function GET() {
     return NextResponse.json({
       tips: getSeedTips(),
       source: "fallback",
-      apiConfigured: await isApiConfigured(),
+      apiConfigured,
       note: getUpstreamNote(),
     });
   }
