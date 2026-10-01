@@ -67,6 +67,8 @@ The app talks to Supabase Postgres through the Supabase Data API. It does not us
 | `AFFILIATE_URL_TEMPLATE`  | ❌       | Tracked affiliate links for the odds comparison (see below)    |
 | `AUTH_SECRET`             | ❌       | Signs the session cookie (a dev default is used if unset — set it in prod). The legacy `NEXTAUTH_SECRET` is still honoured, so existing sessions survive the upgrade |
 
+Keep `.env` local and git-ignored. Never commit live Paystack or Supabase credentials; put them in your deployment's secrets store. For Paystack, configure matching public and secret keys together, or leave both unset for demo mode. GitHub push protection rejects commits containing live Paystack secret keys.
+
 ## Scripts
 
 | Script            | Description                                        |
@@ -246,7 +248,7 @@ casing, which other tables reference).
 ## Payment modes
 
 - **Demo mode** (no `PAYSTACK_SECRET_KEY`): checkout is simulated — the modal auto-verifies after 2 seconds and premium activates. Good for testing the full flow.
-- **Live mode** (keys set): real Paystack `initialize`/`verify` calls, the Paystack inline popup in the browser, and HMAC-SHA512 webhook signature verification.
+- **Live mode** (matching public and secret keys set): real Paystack `initialize`/`verify` calls, the Paystack inline popup in the browser, and HMAC-SHA512 webhook signature verification. Configure both keys or neither; never commit live credentials.
 
 Amounts are Ksh; Paystack expects them in cents (`amount * 100`, currency `KES`).
 

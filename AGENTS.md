@@ -22,7 +22,7 @@ The dev server uses port 3000. Supabase credentials are required for database-ba
 - The Supabase secret/service-role key bypasses RLS and is trusted. RLS is enabled with no browser-role policies; keep all DB access on the server.
 
 ## Other notes
-- External football data (football-data.org), Paystack, and the Socket.IO odds service are optional.
+- External football data (football-data.org), Paystack, and the Socket.IO odds service are optional. Configure both Paystack keys as a matching pair or leave both unset; never commit live keys, and keep `.env` local/ignored.
 - `AUTH_SECRET` should be set to a random value in production; app authentication remains the existing bcrypt + signed HttpOnly session cookie flow, not Supabase Auth.
 - `next.config.ts` derives `allowedDevOrigins` from `BASE44_PUBLIC_HOST_SUFFIX` for Arena/Base44 preview hosts.
 
